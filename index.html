@@ -482,8 +482,9 @@
         </div>
         
         <div id="cadastro" class="tab-content">
-            <h2>Cadastrar Novo Agendamento</h2>
+            <h2 id="tituloCadastro">Cadastrar Novo Agendamento</h2>
             <form id="formCadastro" onsubmit="cadastrarAgendamento(event)">
+                <input type="hidden" id="editandoIndex" value="">
                 <div class="form-grid">
                     <div class="form-group">
                         <label>Data</label>
@@ -541,7 +542,10 @@
                         <input type="text" id="taxas" placeholder="Ex: R$ 250,00">
                     </div>
                 </div>
-                <button type="submit" class="btn btn-primary">Cadastrar Agendamento</button>
+                <div style="display: flex; gap: 10px;">
+                    <button type="submit" class="btn btn-primary" id="btnSubmit">Cadastrar Agendamento</button>
+                    <button type="button" class="btn btn-secondary" id="btnCancelar" onclick="cancelarEdicao()" style="display: none;">Cancelar Edição</button>
+                </div>
             </form>
         </div>
         
@@ -657,32 +661,100 @@
             const diasSemana = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado'];
             const diaSemana = diasSemana[dataObj.getDay()];
 
-            // Capturar data e hora do cadastro
-            const agora = new Date();
-            const dataCadastro = agora.toLocaleDateString('pt-BR');
-            const horaCadastro = agora.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+            const editandoIndex = document.getElementById('editandoIndex').value;
 
-            agendamentos.push({
-                data: formatarData(data),
-                dia_semana: diaSemana,
-                horario: horario,
-                itinerario: itinerario,
-                companhia: companhia,
-                regiao: regiao,
-                recorrencia: recorrencia,
-                link: link,
-                milhas: milhas,
-                taxas: taxas,
-                data_cadastro: dataCadastro,
-                hora_cadastro: horaCadastro,
-                status: 'Agendado'
-            });
+            if (editandoIndex !== '') {
+                // Modo edição - atualizar agendamento existente
+                const index = parseInt(editandoIndex);
+                const agendamentoOriginal = agendamentos[index];
 
-            salvarDados();
-            atualizarTudo();
+                agendamentos[index] = {
+                    data: formatarData(data),
+                    dia_semana: diaSemana,
+                    horario: horario,
+                    itinerario: itinerario,
+                    companhia: companhia,
+                    regiao: regiao,
+                    recorrencia: recorrencia,
+                    link: link,
+                    milhas: milhas,
+                    taxas: taxas,
+                    data_cadastro: agendamentoOriginal.data_cadastro,
+                    hora_cadastro: agendamentoOriginal.hora_cadastro,
+                    status: 'Agendado'
+                };
 
+                salvarDados();
+                atualizarTudo();
+                cancelarEdicao();
+                alert('Agendamento atualizado com sucesso!');
+
+            } else {
+                // Modo cadastro - criar novo agendamento
+                const agora = new Date();
+                const dataCadastro = agora.toLocaleDateString('pt-BR');
+                const horaCadastro = agora.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+
+                agendamentos.push({
+                    data: formatarData(data),
+                    dia_semana: diaSemana,
+                    horario: horario,
+                    itinerario: itinerario,
+                    companhia: companhia,
+                    regiao: regiao,
+                    recorrencia: recorrencia,
+                    link: link,
+                    milhas: milhas,
+                    taxas: taxas,
+                    data_cadastro: dataCadastro,
+                    hora_cadastro: horaCadastro,
+                    status: 'Agendado'
+                });
+
+                salvarDados();
+                atualizarTudo();
+                document.getElementById('formCadastro').reset();
+                alert('Agendamento cadastrado com sucesso!');
+            }
+        }
+
+        function editarAgendamento(index) {
+            const ag = agendamentos[index];
+
+            // Converter data de DD/MM/YYYY para YYYY-MM-DD
+            const [dia, mes, ano] = ag.data.split('/');
+            const dataFormatada = `${ano}-${mes}-${dia}`;
+
+            // Preencher formulário
+            document.getElementById('data').value = dataFormatada;
+            document.getElementById('horario').value = ag.horario;
+            document.getElementById('itinerario').value = ag.itinerario;
+            document.getElementById('companhia').value = ag.companhia || '';
+            document.getElementById('regiao').value = ag.regiao;
+            document.getElementById('recorrencia').value = ag.recorrencia;
+            document.getElementById('link').value = ag.link || '';
+            document.getElementById('milhas').value = ag.milhas || '';
+            document.getElementById('taxas').value = ag.taxas || '';
+
+            // Marcar como editando
+            document.getElementById('editandoIndex').value = index;
+            document.getElementById('tituloCadastro').textContent = 'Editar Agendamento';
+            document.getElementById('btnSubmit').textContent = 'Salvar Alterações';
+            document.getElementById('btnCancelar').style.display = 'block';
+
+            // Ir para aba de cadastro
+            document.querySelector('.tab:nth-child(2)').click();
+
+            // Scroll para o topo
+            window.scrollTo(0, 0);
+        }
+
+        function cancelarEdicao() {
             document.getElementById('formCadastro').reset();
-            alert('Agendamento cadastrado com sucesso!');
+            document.getElementById('editandoIndex').value = '';
+            document.getElementById('tituloCadastro').textContent = 'Cadastrar Novo Agendamento';
+            document.getElementById('btnSubmit').textContent = 'Cadastrar Agendamento';
+            document.getElementById('btnCancelar').style.display = 'none';
         }
         
         function formatarData(data) {
@@ -876,7 +948,12 @@
                     <td>${taxasTexto}</td>
                     <td style="font-size: 0.85em;">${cadastroTexto}</td>
                     <td>${linkBtn}</td>
-                    <td><button class="btn btn-danger" style="padding: 8px 16px; font-size: 0.85em;" onclick="excluirAgendamento(${realIndex})">Excluir</button></td>
+                    <td>
+                        <div style="display: flex; gap: 5px;">
+                            <button class="btn btn-secondary" style="padding: 8px 16px; font-size: 0.85em;" onclick="editarAgendamento(${realIndex})">Editar</button>
+                            <button class="btn btn-danger" style="padding: 8px 16px; font-size: 0.85em;" onclick="excluirAgendamento(${realIndex})">Excluir</button>
+                        </div>
+                    </td>
                 </tr>`;
             });
             
