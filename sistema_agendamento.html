@@ -1,0 +1,986 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema de Controle de Agendamentos</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #0a1929;
+            min-height: 100vh;
+            padding: 20px;
+            color: #e0e0e0;
+        }
+        
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+            background: #1a2332;
+            border-radius: 12px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+            overflow: hidden;
+            border: 1px solid #2a3544;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #0a1929 0%, #1a2332 100%);
+            color: #d4af37;
+            padding: 30px;
+            border-bottom: 2px solid #d4af37;
+        }
+        
+        .header h1 {
+            font-size: 2em;
+            margin-bottom: 5px;
+            font-weight: 600;
+            letter-spacing: 1px;
+        }
+        
+        .header p {
+            color: #b0b0b0;
+            font-size: 0.95em;
+        }
+        
+        .tabs {
+            display: flex;
+            background: #0f1620;
+            border-bottom: 1px solid #2a3544;
+        }
+        
+        .tab {
+            flex: 1;
+            padding: 18px;
+            text-align: center;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.3s;
+            border: none;
+            background: none;
+            font-size: 0.95em;
+            color: #b0b0b0;
+            border-bottom: 3px solid transparent;
+        }
+        
+        .tab:hover {
+            background: #1a2332;
+            color: #d4af37;
+        }
+        
+        .tab.active {
+            background: #1a2332;
+            color: #d4af37;
+            border-bottom: 3px solid #d4af37;
+        }
+        
+        .tab-content {
+            display: none;
+            padding: 30px;
+            animation: fadeIn 0.4s;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        
+        h2 {
+            color: #d4af37;
+            margin-bottom: 25px;
+            font-size: 1.5em;
+            font-weight: 600;
+        }
+        
+        h3 {
+            color: #d4af37;
+            margin: 25px 0 15px 0;
+            font-size: 1.2em;
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .stat-card {
+            background: #0f1620;
+            padding: 25px;
+            border-radius: 8px;
+            border: 1px solid #2a3544;
+            transition: all 0.3s;
+        }
+        
+        .stat-card:hover {
+            border-color: #d4af37;
+            transform: translateY(-2px);
+        }
+        
+        .stat-card h3 {
+            font-size: 0.85em;
+            color: #b0b0b0;
+            margin: 0 0 10px 0;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .stat-card .value {
+            font-size: 2.5em;
+            font-weight: bold;
+            color: #d4af37;
+        }
+        
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 25px;
+        }
+        
+        .form-group {
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .form-group label {
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: #d4af37;
+            font-size: 0.9em;
+        }
+        
+        .form-group input,
+        .form-group select {
+            padding: 12px;
+            border: 1px solid #2a3544;
+            border-radius: 6px;
+            font-size: 0.95em;
+            background: #0f1620;
+            color: #e0e0e0;
+            transition: border 0.3s;
+        }
+        
+        .form-group input:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: #d4af37;
+        }
+        
+        .btn {
+            padding: 14px 28px;
+            border: none;
+            border-radius: 6px;
+            font-size: 0.95em;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .btn-primary {
+            background: #d4af37;
+            color: #0a1929;
+        }
+        
+        .btn-primary:hover {
+            background: #f0c850;
+            transform: translateY(-2px);
+        }
+        
+        .btn-secondary {
+            background: #2a3544;
+            color: #e0e0e0;
+        }
+        
+        .btn-secondary:hover {
+            background: #3a4554;
+        }
+        
+        .btn-danger {
+            background: #c62828;
+            color: white;
+        }
+        
+        .btn-danger:hover {
+            background: #d32f2f;
+        }
+        
+        .region-section {
+            margin-bottom: 40px;
+        }
+        
+        .region-title {
+            background: #0f1620;
+            color: #d4af37;
+            padding: 15px;
+            border-radius: 6px;
+            margin-bottom: 15px;
+            font-size: 1.1em;
+            font-weight: 600;
+            border: 1px solid #2a3544;
+        }
+        
+        .time-grid {
+            display: grid;
+            grid-template-columns: 90px repeat(7, 1fr);
+            gap: 4px;
+            font-size: 0.85em;
+        }
+        
+        .time-header, .day-header, .time-cell {
+            padding: 10px 5px;
+            text-align: center;
+            border-radius: 4px;
+        }
+        
+        .day-header {
+            background: #0f1620;
+            color: #d4af37;
+            font-weight: 600;
+            border: 1px solid #2a3544;
+        }
+        
+        .time-header {
+            background: #0f1620;
+            font-weight: 500;
+            color: #b0b0b0;
+            border: 1px solid #2a3544;
+        }
+        
+        .time-cell {
+            cursor: pointer;
+            transition: all 0.2s;
+            font-weight: 600;
+            border: 1px solid #2a3544;
+        }
+        
+        .time-cell.livre {
+            background: #1b4332;
+            color: #95d5b2;
+        }
+        
+        .time-cell.livre:hover {
+            background: #2d6a4f;
+            border-color: #95d5b2;
+        }
+        
+        .time-cell.ocupado {
+            background: #3d1f1f;
+            color: #e5989b;
+        }
+        
+        .time-cell.ocupado:hover {
+            background: #4d2f2f;
+        }
+        
+        .agendamentos-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        
+        .agendamentos-table th,
+        .agendamentos-table td {
+            padding: 14px;
+            text-align: left;
+            border-bottom: 1px solid #2a3544;
+        }
+        
+        .agendamentos-table th {
+            background: #0f1620;
+            color: #d4af37;
+            font-weight: 600;
+            text-transform: uppercase;
+            font-size: 0.85em;
+            letter-spacing: 0.5px;
+        }
+        
+        .agendamentos-table tr {
+            background: #1a2332;
+        }
+        
+        .agendamentos-table tr:hover {
+            background: #0f1620;
+        }
+        
+        .badge {
+            padding: 5px 12px;
+            border-radius: 4px;
+            font-size: 0.8em;
+            font-weight: 500;
+            display: inline-block;
+        }
+        
+        .badge-diario {
+            background: #1e3a5f;
+            color: #64b5f6;
+        }
+        
+        .badge-alternado {
+            background: #4a3c1f;
+            color: #d4af37;
+        }
+        
+        .badge-uma-vez {
+            background: #1b4332;
+            color: #95d5b2;
+        }
+        
+        .search-box {
+            padding: 12px;
+            border: 1px solid #2a3544;
+            border-radius: 6px;
+            font-size: 0.95em;
+            width: 100%;
+            margin-bottom: 20px;
+            background: #0f1620;
+            color: #e0e0e0;
+        }
+        
+        .search-box:focus {
+            outline: none;
+            border-color: #d4af37;
+        }
+        
+        .filter-group {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        
+        .filter-btn {
+            padding: 10px 20px;
+            border: 1px solid #2a3544;
+            background: #0f1620;
+            color: #b0b0b0;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 0.9em;
+        }
+        
+        .filter-btn:hover {
+            border-color: #d4af37;
+            color: #d4af37;
+        }
+        
+        .filter-btn.active {
+            background: #d4af37;
+            color: #0a1929;
+            border-color: #d4af37;
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #6c757d;
+        }
+        
+        .distribuicao-box {
+            background: #0f1620;
+            padding: 15px;
+            border-radius: 6px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+            border: 1px solid #2a3544;
+        }
+        
+        .distribuicao-box:hover {
+            border-color: #d4af37;
+        }
+        
+        .distribuicao-box span:first-child {
+            font-weight: 500;
+            color: #e0e0e0;
+        }
+        
+        .distribuicao-box span:nth-child(2) {
+            font-size: 1.5em;
+            color: #d4af37;
+            font-weight: 600;
+        }
+        
+        .distribuicao-box span:last-child {
+            color: #b0b0b0;
+        }
+        
+        .info-text {
+            color: #b0b0b0;
+            font-size: 0.9em;
+            margin-bottom: 20px;
+            padding: 12px;
+            background: #0f1620;
+            border-radius: 6px;
+            border-left: 3px solid #d4af37;
+        }
+        
+        .config-section {
+            margin-top: 30px;
+            padding: 25px;
+            background: #0f1620;
+            border-radius: 8px;
+            border: 1px solid #2a3544;
+        }
+        
+        .config-section h3 {
+            margin-top: 0;
+        }
+        
+        .config-section p {
+            color: #b0b0b0;
+            line-height: 1.6;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Sistema de Controle de Agendamentos</h1>
+            <p>Gestão inteligente de postagens por região</p>
+        </div>
+        
+        <div class="tabs">
+            <button class="tab active" onclick="showTab('dashboard')">Dashboard</button>
+            <button class="tab" onclick="showTab('cadastro')">Cadastrar</button>
+            <button class="tab" onclick="showTab('disponibilidade')">Disponibilidade</button>
+            <button class="tab" onclick="showTab('agendamentos')">Agendamentos</button>
+            <button class="tab" onclick="showTab('configuracoes')">Configurações</button>
+        </div>
+        
+        <div id="dashboard" class="tab-content active">
+            <h2>Dashboard Geral</h2>
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <h3>Total de Agendamentos</h3>
+                    <div class="value" id="totalAgendamentos">0</div>
+                </div>
+                <div class="stat-card">
+                    <h3>Horários Disponíveis</h3>
+                    <div class="value" id="horariosDisponiveis">0</div>
+                </div>
+                <div class="stat-card">
+                    <h3>Postagens Hoje</h3>
+                    <div class="value" id="postagensHoje">0</div>
+                </div>
+            </div>
+            
+            <h3>Distribuição por Região</h3>
+            <div id="distribuicaoRegioes"></div>
+        </div>
+        
+        <div id="cadastro" class="tab-content">
+            <h2>Cadastrar Novo Agendamento</h2>
+            <form id="formCadastro" onsubmit="cadastrarAgendamento(event)">
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>Data</label>
+                        <input type="date" id="data" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Horário</label>
+                        <input type="time" id="horario" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Itinerário</label>
+                        <input type="text" id="itinerario" placeholder="Ex: GRU - RIO" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Companhia Aérea</label>
+                        <select id="companhia" required>
+                            <option value="">Selecione...</option>
+                            <option value="Azul">Azul</option>
+                            <option value="Smiles">Smiles</option>
+                            <option value="Latam">Latam</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Região</label>
+                        <select id="regiao" required>
+                            <option value="">Selecione...</option>
+                            <option value="Norte">Norte</option>
+                            <option value="Nordeste">Nordeste</option>
+                            <option value="Centro-Oeste">Centro-Oeste</option>
+                            <option value="Sudeste">Sudeste</option>
+                            <option value="Sul">Sul</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Recorrência</label>
+                        <select id="recorrencia" required>
+                            <option value="Diário">Diário (todo dia)</option>
+                            <option value="Dias Alternados">Dias Alternados</option>
+                            <option value="Uma Vez">Uma Vez</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Link da Promoção</label>
+                        <div style="display: flex; gap: 10px;">
+                            <input type="url" id="link" placeholder="https://..." style="flex: 1;">
+                            <button type="button" class="btn btn-secondary" onclick="abrirLink()" style="white-space: nowrap;">Abrir Link</button>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Quantidade de Milhas</label>
+                        <input type="text" id="milhas" placeholder="Ex: 15.000">
+                    </div>
+                    <div class="form-group">
+                        <label>Taxas de Embarque</label>
+                        <input type="text" id="taxas" placeholder="Ex: R$ 250,00">
+                    </div>
+                </div>
+                <button type="submit" class="btn btn-primary">Cadastrar Agendamento</button>
+            </form>
+        </div>
+        
+        <div id="disponibilidade" class="tab-content">
+            <h2>Disponibilidade por Região</h2>
+            <div class="info-text">
+                Verde = Livre | Vermelho = Ocupado | Clique em um horário livre para cadastrar
+            </div>
+
+            <div class="form-group" style="max-width: 300px; margin-bottom: 25px;">
+                <label>Selecione a Região</label>
+                <select id="regiaoFiltro" onchange="renderizarDisponibilidade()" style="font-size: 1.1em; padding: 14px;">
+                    <option value="Todas">Todas as Regiões</option>
+                    <option value="Norte">Norte</option>
+                    <option value="Nordeste">Nordeste</option>
+                    <option value="Centro-Oeste">Centro-Oeste</option>
+                    <option value="Sudeste">Sudeste</option>
+                    <option value="Sul">Sul</option>
+                </select>
+            </div>
+
+            <div id="disponibilidadeContent"></div>
+        </div>
+        
+        <div id="agendamentos" class="tab-content">
+            <h2>Lista de Agendamentos</h2>
+            <input type="text" class="search-box" id="searchBox" placeholder="Buscar por itinerário ou região..." onkeyup="filtrarAgendamentos()">
+            
+            <div class="filter-group">
+                <button class="filter-btn active" onclick="filtrarPorRegiao('Todas')">Todas</button>
+                <button class="filter-btn" onclick="filtrarPorRegiao('Norte')">Norte</button>
+                <button class="filter-btn" onclick="filtrarPorRegiao('Nordeste')">Nordeste</button>
+                <button class="filter-btn" onclick="filtrarPorRegiao('Centro-Oeste')">Centro-Oeste</button>
+                <button class="filter-btn" onclick="filtrarPorRegiao('Sudeste')">Sudeste</button>
+                <button class="filter-btn" onclick="filtrarPorRegiao('Sul')">Sul</button>
+            </div>
+            
+            <div id="listaAgendamentos"></div>
+        </div>
+        
+        <div id="configuracoes" class="tab-content">
+            <h2>Configurações e Dados</h2>
+            <div style="display: flex; gap: 10px; margin-top: 20px; flex-wrap: wrap;">
+                <button class="btn btn-primary" onclick="document.getElementById('fileImport').click()">Importar Dados (JSON)</button>
+                <input type="file" id="fileImport" accept=".json" style="display: none;" onchange="importarDados(event)">
+                <button class="btn btn-primary" onclick="exportarExcel()">Exportar para Excel</button>
+                <button class="btn btn-secondary" onclick="backupDados()">Backup dos Dados</button>
+                <button class="btn btn-danger" onclick="limparTodos()">Limpar Todos os Dados</button>
+            </div>
+
+            <div class="info-text" style="margin-top: 20px;">
+                <strong>Como importar seus agendamentos:</strong><br>
+                1. Clique em "Importar Dados (JSON)"<br>
+                2. Selecione o arquivo "agendamentos_para_importar.json"<br>
+                3. Os dados serão carregados automaticamente!
+            </div>
+            
+            <div class="config-section">
+                <h3>Sobre o Sistema</h3>
+                <p>Sistema de Controle de Agendamentos - Versão 1.0</p>
+                <p style="margin-top: 10px;">Os dados são salvos automaticamente no navegador (LocalStorage).</p>
+                <p style="margin-top: 10px;">Para sincronizar entre dispositivos, utilize a função de Backup/Restaurar.</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let agendamentos = [];
+        
+        function carregarDados() {
+            const dadosSalvos = localStorage.getItem('agendamentos');
+            if (dadosSalvos) {
+                agendamentos = JSON.parse(dadosSalvos);
+            } else {
+                agendamentos = DADOS_INICIAIS;
+                salvarDados();
+            }
+            atualizarTudo();
+        }
+        
+        function salvarDados() {
+            localStorage.setItem('agendamentos', JSON.stringify(agendamentos));
+        }
+        
+        function showTab(tabName) {
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+            
+            event.target.classList.add('active');
+            document.getElementById(tabName).classList.add('active');
+            
+            if (tabName === 'disponibilidade') {
+                renderizarDisponibilidade();
+            } else if (tabName === 'agendamentos') {
+                renderizarListaAgendamentos();
+            }
+        }
+        
+        function cadastrarAgendamento(e) {
+            e.preventDefault();
+
+            const data = document.getElementById('data').value;
+            const horario = document.getElementById('horario').value;
+            const itinerario = document.getElementById('itinerario').value;
+            const companhia = document.getElementById('companhia').value;
+            const regiao = document.getElementById('regiao').value;
+            const recorrencia = document.getElementById('recorrencia').value;
+            const link = document.getElementById('link').value;
+            const milhas = document.getElementById('milhas').value;
+            const taxas = document.getElementById('taxas').value;
+
+            const dataObj = new Date(data + 'T00:00:00');
+            const diasSemana = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado'];
+            const diaSemana = diasSemana[dataObj.getDay()];
+
+            // Capturar data e hora do cadastro
+            const agora = new Date();
+            const dataCadastro = agora.toLocaleDateString('pt-BR');
+            const horaCadastro = agora.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+
+            agendamentos.push({
+                data: formatarData(data),
+                dia_semana: diaSemana,
+                horario: horario,
+                itinerario: itinerario,
+                companhia: companhia,
+                regiao: regiao,
+                recorrencia: recorrencia,
+                link: link,
+                milhas: milhas,
+                taxas: taxas,
+                data_cadastro: dataCadastro,
+                hora_cadastro: horaCadastro,
+                status: 'Agendado'
+            });
+
+            salvarDados();
+            atualizarTudo();
+
+            document.getElementById('formCadastro').reset();
+            alert('Agendamento cadastrado com sucesso!');
+        }
+        
+        function formatarData(data) {
+            const [ano, mes, dia] = data.split('-');
+            return `${dia}/${mes}/${ano}`;
+        }
+
+        function abrirLink() {
+            const link = document.getElementById('link').value.trim();
+            if (link) {
+                if (link.startsWith('http://') || link.startsWith('https://')) {
+                    window.open(link, '_blank');
+                } else {
+                    alert('Por favor, insira um link válido começando com http:// ou https://');
+                }
+            } else {
+                alert('Por favor, preencha o campo de link primeiro!');
+            }
+        }
+        
+        function atualizarTudo() {
+            atualizarDashboard();
+            if (document.getElementById('disponibilidade').classList.contains('active')) {
+                renderizarDisponibilidade();
+            }
+            if (document.getElementById('agendamentos').classList.contains('active')) {
+                renderizarListaAgendamentos();
+            }
+        }
+        
+        function atualizarDashboard() {
+            document.getElementById('totalAgendamentos').textContent = agendamentos.length;
+            
+            const totalSlots = 27 * 7;
+            const slotsOcupados = agendamentos.length * 7;
+            document.getElementById('horariosDisponiveis').textContent = Math.max(0, totalSlots - slotsOcupados);
+            
+            const hoje = new Date().toLocaleDateString('pt-BR');
+            const postagensHoje = agendamentos.filter(a => a.data === hoje).length;
+            document.getElementById('postagensHoje').textContent = postagensHoje;
+            
+            const regioes = ['Norte', 'Nordeste', 'Centro-Oeste', 'Sudeste', 'Sul'];
+            let html = '';
+            
+            regioes.forEach(regiao => {
+                const count = agendamentos.filter(a => a.regiao === regiao).length;
+                const percent = agendamentos.length > 0 ? (count / agendamentos.length * 100).toFixed(1) : 0;
+                html += `
+                    <div class="distribuicao-box">
+                        <span>${regiao}</span>
+                        <span>${count}</span>
+                        <span>${percent}%</span>
+                    </div>
+                `;
+            });
+            
+            document.getElementById('distribuicaoRegioes').innerHTML = html;
+        }
+        
+        function renderizarDisponibilidade() {
+            let regioesFiltradas = ['Norte', 'Nordeste', 'Centro-Oeste', 'Sudeste', 'Sul'];
+
+            const regiaoSelecionada = document.getElementById('regiaoFiltro')?.value || 'Todas';
+
+            if (regiaoSelecionada !== 'Todas') {
+                regioesFiltradas = [regiaoSelecionada];
+            }
+
+            const horarios = ['08:00', '08:30', '09:00', '09:30', '10:00', '10:30', '11:00', '11:30',
+                              '12:00', '12:30', '13:00', '13:30', '14:00', '14:30', '15:00', '15:30',
+                              '16:00', '16:30', '17:00', '17:30', '18:00', '18:30', '19:00', '19:30',
+                              '20:00', '20:30', '21:00'];
+
+            const dataInicio = new Date('2026-01-21');
+            const dias = [];
+            for (let i = 0; i < 7; i++) {
+                const data = new Date(dataInicio);
+                data.setDate(dataInicio.getDate() + i);
+                dias.push(data);
+            }
+
+            let html = '';
+
+            regioesFiltradas.forEach(regiao => {
+                html += `<div class="region-section">`;
+                html += `<div class="region-title">REGIÃO: ${regiao.toUpperCase()}</div>`;
+                html += `<div class="time-grid">`;
+                
+                html += `<div class="time-header">Horário</div>`;
+                dias.forEach(dia => {
+                    const nomeDia = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'][dia.getDay()];
+                    html += `<div class="day-header">${nomeDia}<br>${dia.getDate()}/${(dia.getMonth()+1).toString().padStart(2,'0')}</div>`;
+                });
+                
+                horarios.forEach(horario => {
+                    html += `<div class="time-header">${horario}</div>`;
+                    
+                    dias.forEach(dia => {
+                        const ocupado = verificarOcupado(regiao, horario, dia);
+                        const classe = ocupado ? 'ocupado' : 'livre';
+                        const texto = ocupado ? 'X' : 'OK';
+                        html += `<div class="time-cell ${classe}" onclick="selecionarHorario('${regiao}', '${horario}', '${dia.toISOString().split('T')[0]}')">${texto}</div>`;
+                    });
+                });
+                
+                html += `</div></div>`;
+            });
+            
+            document.getElementById('disponibilidadeContent').innerHTML = html;
+        }
+        
+        function verificarOcupado(regiao, horario, dia) {
+            return agendamentos.some(ag => {
+                if (ag.regiao !== regiao || ag.horario !== horario) return false;
+                
+                const dataAg = parseData(ag.data);
+                const recorrencia = ag.recorrencia || 'Diário';
+                
+                if (recorrencia === 'Diário') {
+                    return dia >= dataAg;
+                } else if (recorrencia === 'Dias Alternados') {
+                    const diffDias = Math.floor((dia - dataAg) / (1000 * 60 * 60 * 24));
+                    return diffDias >= 0 && diffDias % 2 === 0;
+                } else {
+                    return dia.toDateString() === dataAg.toDateString();
+                }
+            });
+        }
+        
+        function parseData(dataStr) {
+            const [dia, mes, ano] = dataStr.split('/');
+            return new Date(ano, mes - 1, dia);
+        }
+        
+        function selecionarHorario(regiao, horario, data) {
+            document.getElementById('regiao').value = regiao;
+            document.getElementById('horario').value = horario;
+            document.getElementById('data').value = data;
+            document.querySelector('.tab:nth-child(2)').click();
+        }
+        
+        let filtroRegiaoAtual = 'Todas';
+        
+        function renderizarListaAgendamentos() {
+            let agendamentosFiltrados = agendamentos;
+            
+            if (filtroRegiaoAtual !== 'Todas') {
+                agendamentosFiltrados = agendamentos.filter(a => a.regiao === filtroRegiaoAtual);
+            }
+            
+            const busca = document.getElementById('searchBox')?.value.toLowerCase() || '';
+            if (busca) {
+                agendamentosFiltrados = agendamentosFiltrados.filter(a => 
+                    a.itinerario.toLowerCase().includes(busca) ||
+                    a.regiao.toLowerCase().includes(busca)
+                );
+            }
+            
+            if (agendamentosFiltrados.length === 0) {
+                document.getElementById('listaAgendamentos').innerHTML = `
+                    <div class="empty-state">
+                        <h3>Nenhum agendamento encontrado</h3>
+                        <p>Tente ajustar os filtros ou adicionar novos agendamentos</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            let html = '<table class="agendamentos-table"><thead><tr>';
+            html += '<th>Data Agend.</th><th>Dia</th><th>Horário</th><th>Itinerário</th><th>Cia Aérea</th><th>Região</th><th>Recorrência</th><th>Milhas</th><th>Taxas</th><th>Cadastrado em</th><th>Link</th><th>Ações</th>';
+            html += '</tr></thead><tbody>';
+
+            agendamentosFiltrados.forEach((ag, index) => {
+                const badgeClass = ag.recorrencia === 'Diário' ? 'badge-diario' :
+                                   ag.recorrencia === 'Dias Alternados' ? 'badge-alternado' : 'badge-uma-vez';
+                const realIndex = agendamentos.indexOf(ag);
+                const linkBtn = ag.link ? `<button class="btn btn-secondary" style="padding: 6px 12px; font-size: 0.8em;" onclick="window.open('${ag.link}', '_blank')">Abrir</button>` : '-';
+                const milhasTexto = ag.milhas || '-';
+                const taxasTexto = ag.taxas || '-';
+                const companhiaTexto = ag.companhia || '-';
+                const cadastroTexto = ag.data_cadastro && ag.hora_cadastro ? `${ag.data_cadastro}<br>${ag.hora_cadastro}` : '-';
+                html += `<tr>
+                    <td>${ag.data}</td>
+                    <td>${ag.dia_semana}</td>
+                    <td>${ag.horario}</td>
+                    <td>${ag.itinerario}</td>
+                    <td>${companhiaTexto}</td>
+                    <td>${ag.regiao}</td>
+                    <td><span class="badge ${badgeClass}">${ag.recorrencia}</span></td>
+                    <td>${milhasTexto}</td>
+                    <td>${taxasTexto}</td>
+                    <td style="font-size: 0.85em;">${cadastroTexto}</td>
+                    <td>${linkBtn}</td>
+                    <td><button class="btn btn-danger" style="padding: 8px 16px; font-size: 0.85em;" onclick="excluirAgendamento(${realIndex})">Excluir</button></td>
+                </tr>`;
+            });
+            
+            html += '</tbody></table>';
+            document.getElementById('listaAgendamentos').innerHTML = html;
+        }
+        
+        function filtrarPorRegiao(regiao) {
+            filtroRegiaoAtual = regiao;
+            document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+            renderizarListaAgendamentos();
+        }
+        
+        function filtrarAgendamentos() {
+            renderizarListaAgendamentos();
+        }
+        
+        function excluirAgendamento(index) {
+            if (confirm('Tem certeza que deseja excluir este agendamento?')) {
+                agendamentos.splice(index, 1);
+                salvarDados();
+                atualizarTudo();
+                alert('Agendamento excluído com sucesso!');
+            }
+        }
+        
+        function exportarExcel() {
+            let csv = 'Data Agendamento,Dia Semana,Horário,Itinerário,Companhia,Região,Recorrência,Milhas,Taxas,Data Cadastro,Hora Cadastro,Link,Status\n';
+            agendamentos.forEach(ag => {
+                csv += `${ag.data},${ag.dia_semana},${ag.horario},${ag.itinerario},"${ag.companhia || ''}",${ag.regiao},${ag.recorrencia},"${ag.milhas || ''}","${ag.taxas || ''}","${ag.data_cadastro || ''}","${ag.hora_cadastro || ''}","${ag.link || ''}",${ag.status}\n`;
+            });
+
+            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = 'agendamentos_' + new Date().toISOString().split('T')[0] + '.csv';
+            link.click();
+            alert('Arquivo Excel exportado com sucesso!');
+        }
+        
+        function backupDados() {
+            const blob = new Blob([JSON.stringify(agendamentos, null, 2)], { type: 'application/json' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = 'backup_agendamentos_' + new Date().toISOString().split('T')[0] + '.json';
+            link.click();
+            alert('Backup realizado com sucesso!');
+        }
+        
+        function importarDados(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const dadosImportados = JSON.parse(e.target.result);
+
+                    if (!Array.isArray(dadosImportados)) {
+                        alert('Erro: O arquivo não contém um formato válido!');
+                        return;
+                    }
+
+                    if (agendamentos.length > 0) {
+                        if (confirm(`Você já tem ${agendamentos.length} agendamentos. Deseja SUBSTITUIR todos pelos dados importados?`)) {
+                            agendamentos = dadosImportados;
+                        } else if (confirm('Deseja ADICIONAR os dados importados aos existentes?')) {
+                            agendamentos = agendamentos.concat(dadosImportados);
+                        } else {
+                            return;
+                        }
+                    } else {
+                        agendamentos = dadosImportados;
+                    }
+
+                    salvarDados();
+                    atualizarTudo();
+                    alert(`Sucesso! ${dadosImportados.length} agendamentos importados!`);
+
+                } catch (error) {
+                    alert('Erro ao importar arquivo: ' + error.message);
+                }
+            };
+            reader.readAsText(file);
+
+            // Limpar input para permitir reimportação
+            event.target.value = '';
+        }
+
+        function limparTodos() {
+            if (confirm('ATENÇÃO! Isso vai apagar TODOS os agendamentos. Tem certeza?')) {
+                if (confirm('Última confirmação! Deseja realmente excluir TUDO?')) {
+                    agendamentos = [];
+                    salvarDados();
+                    atualizarTudo();
+                    alert('Todos os dados foram limpos!');
+                }
+            }
+        }
+        
+        const DADOS_INICIAIS = 
+        
+        carregarDados();
+    </script>
+</body>
+</html>
