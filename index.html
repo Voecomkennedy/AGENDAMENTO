@@ -161,7 +161,8 @@
         }
         
         .form-group input,
-        .form-group select {
+        .form-group select,
+        .form-group textarea {
             padding: 12px;
             border: 1px solid #2a3544;
             border-radius: 6px;
@@ -169,10 +170,18 @@
             background: #0f1620;
             color: #e0e0e0;
             transition: border 0.3s;
+            font-family: inherit;
         }
-        
+
+        .form-group textarea {
+            resize: vertical;
+            min-height: 100px;
+            line-height: 1.5;
+        }
+
         .form-group input:focus,
-        .form-group select:focus {
+        .form-group select:focus,
+        .form-group textarea:focus {
             outline: none;
             border-color: #d4af37;
         }
@@ -585,13 +594,33 @@
                         <label>Anotações/Observações</label>
                         <input type="text" id="observacoes" placeholder="Ex: Melhor preço do mês, expira rápido...">
                     </div>
+                    <div class="form-group">
+                        <label>Datas Disponíveis (Cole as datas dos voos)</label>
+                        <textarea id="datasDisponiveis" rows="4" placeholder="Ex: Mar: 16, 17, 18, 19, 20&#10;Abr: 01, 02, 03, 04, 05&#10;Mai: 10, 11, 12"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label>Preço Médio de Mercado (R$)</label>
+                        <div style="display: flex; gap: 10px;">
+                            <input type="text" id="precoMedio" placeholder="Ex: 850,00" style="flex: 1;">
+                            <button type="button" class="btn btn-secondary" onclick="calcularPrecoMedio()" style="white-space: nowrap;">Calcular Auto</button>
+                        </div>
+                        <small style="color: #888; display: block; margin-top: 5px;">Auto: +40% para nacional, +30% para internacional</small>
+                    </div>
+                    <div class="form-group">
+                        <label>URL Landing Page Base</label>
+                        <input type="text" id="urlLandingPage" value="https://voecomkennedy.github.io/EMISSAO/" placeholder="https://voecomkennedy.github.io/EMISSAO/">
+                    </div>
                 </div>
 
                 <div class="info-text" style="margin-top: 15px; margin-bottom: 15px;">
-                    <strong>CUSTO TOTAL ESTIMADO:</strong> <span id="custoTotal" style="color: #d4af37; font-size: 1.2em; font-weight: bold;">-</span>
+                    <strong>CUSTO TOTAL (PIX):</strong> <span id="custoTotal" style="color: #d4af37; font-size: 1.2em; font-weight: bold;">-</span><br>
+                    <strong>PREÇO CARTÃO (5x):</strong> <span id="precoCartao" style="color: #d4af37; font-size: 1.2em; font-weight: bold;">-</span>
                 </div>
 
-                <div style="display: flex; gap: 10px;">
+                <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                    <button type="button" class="btn" onclick="gerarPostCompleto()" style="background: linear-gradient(135deg, #d4af37 0%, #f4d03f 100%); color: #0a1929; font-weight: bold; flex: 1; min-width: 250px;">Gerar Post Completo VoeComKennedy</button>
+                </div>
+                <div style="display: flex; gap: 10px; margin-top: 10px;">
                     <button type="submit" class="btn btn-primary" id="btnSubmit">Cadastrar Agendamento</button>
                     <button type="button" class="btn btn-secondary" id="btnCancelar" onclick="cancelarEdicao()" style="display: none;">Cancelar Edição</button>
                 </div>
@@ -808,6 +837,9 @@
             const valorMilheiro = document.getElementById('valorMilheiro').value;
             const taxas = document.getElementById('taxas').value;
             const observacoes = document.getElementById('observacoes').value;
+            const datasDisponiveis = document.getElementById('datasDisponiveis').value;
+            const precoMedio = document.getElementById('precoMedio').value;
+            const urlLandingPage = document.getElementById('urlLandingPage').value;
 
             const dataObj = new Date(data + 'T00:00:00');
             const diasSemana = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado'];
@@ -833,6 +865,9 @@
                     valorMilheiro: valorMilheiro,
                     taxas: taxas,
                     observacoes: observacoes,
+                    datasDisponiveis: datasDisponiveis,
+                    precoMedio: precoMedio,
+                    urlLandingPage: urlLandingPage,
                     data_cadastro: agendamentoOriginal.data_cadastro,
                     hora_cadastro: agendamentoOriginal.hora_cadastro,
                     status: 'Agendado'
@@ -862,6 +897,9 @@
                     valorMilheiro: valorMilheiro,
                     taxas: taxas,
                     observacoes: observacoes,
+                    datasDisponiveis: datasDisponiveis,
+                    precoMedio: precoMedio,
+                    urlLandingPage: urlLandingPage,
                     data_cadastro: dataCadastro,
                     hora_cadastro: horaCadastro,
                     status: 'Agendado'
@@ -893,6 +931,9 @@
             document.getElementById('valorMilheiro').value = ag.valorMilheiro || '';
             document.getElementById('taxas').value = ag.taxas || '';
             document.getElementById('observacoes').value = ag.observacoes || '';
+            document.getElementById('datasDisponiveis').value = ag.datasDisponiveis || '';
+            document.getElementById('precoMedio').value = ag.precoMedio || '';
+            document.getElementById('urlLandingPage').value = ag.urlLandingPage || 'https://voecomkennedy.github.io/EMISSAO/';
 
             // Calcular custo total
             calcularCustoTotal();
@@ -1580,6 +1621,7 @@
 
             if (!milhasInput && !taxasInput) {
                 document.getElementById('custoTotal').textContent = '-';
+                document.getElementById('precoCartao').textContent = '-';
                 return;
             }
 
@@ -1609,9 +1651,56 @@
 
                 document.getElementById('custoTotal').textContent =
                     `R$ ${total.toFixed(2).replace('.', ',')} (${detalhes.join(' + ')})`;
+
+                // Calcular preço no cartão: 5x com juros de 8,8%
+                const precoCartao = total * 1.088;
+                const parcelaMensal = precoCartao / 5;
+                document.getElementById('precoCartao').textContent =
+                    `R$ ${precoCartao.toFixed(2).replace('.', ',')} (5x de R$ ${parcelaMensal.toFixed(2).replace('.', ',')})`;
             } else {
                 document.getElementById('custoTotal').textContent = '-';
+                document.getElementById('precoCartao').textContent = '-';
             }
+        }
+
+        function calcularPrecoMedio() {
+            // Pegar o itinerário para determinar se é nacional ou internacional
+            const itinerario = document.getElementById('itinerario').value.toUpperCase();
+
+            // Verificar se tem custo total calculado
+            const milhasInput = document.getElementById('milhas').value;
+            const valorMilheiroInput = document.getElementById('valorMilheiro').value;
+            const taxasInput = document.getElementById('taxas').value;
+
+            if (!milhasInput || !valorMilheiroInput) {
+                alert('Por favor, preencha Milhas e Valor do Milheiro primeiro!');
+                return;
+            }
+
+            // Calcular custo total (PIX)
+            const milhasNum = parseFloat(milhasInput.replace(/[^\d]/g, ''));
+            const valorMilheiroNum = parseFloat(valorMilheiroInput.replace(/[^\d,]/g, '').replace(',', '.'));
+            const custoMilhas = (milhasNum / 1000) * valorMilheiroNum;
+            const taxasNum = taxasInput ? parseFloat(taxasInput.replace(/[^\d,]/g, '').replace(',', '.')) : 0;
+            const custoTotalPix = custoMilhas + (isNaN(taxasNum) ? 0 : taxasNum);
+
+            // Determinar se é nacional ou internacional
+            // Internacional geralmente tem 3 letras nos códigos (ex: GRU-MIA)
+            const isInternacional = /[A-Z]{3}/.test(itinerario) && itinerario.includes('-');
+
+            let precoMedio;
+            if (isInternacional) {
+                // +30% para internacional
+                precoMedio = custoTotalPix * 1.30;
+            } else {
+                // +40% para nacional
+                precoMedio = custoTotalPix * 1.40;
+            }
+
+            document.getElementById('precoMedio').value = precoMedio.toFixed(2).replace('.', ',');
+
+            const tipo = isInternacional ? 'internacional (+30%)' : 'nacional (+40%)';
+            alert(`Preço médio calculado para voo ${tipo}: R$ ${precoMedio.toFixed(2).replace('.', ',')}`);
         }
 
         function salvarCotacao() {
@@ -1622,6 +1711,152 @@
                 calcularCustoTotal();
                 alert('Cotação salva com sucesso!');
             }
+        }
+
+        function gerarLinkLandingPage() {
+            const itinerario = document.getElementById('itinerario').value;
+            const companhia = document.getElementById('companhia').value;
+            const urlBase = document.getElementById('urlLandingPage').value || 'https://voecomkennedy.github.io/EMISSAO/';
+
+            // Extrair origem e destino do itinerário (ex: "GRU-SDU" ou "São Paulo-Rio")
+            const partes = itinerario.split('-');
+            if (partes.length < 2) {
+                return urlBase;
+            }
+
+            const origem = encodeURIComponent(partes[0].trim());
+            const destino = encodeURIComponent(partes[1].trim());
+            const cia = encodeURIComponent(companhia || '');
+
+            // Pegar valores
+            const milhasInput = document.getElementById('milhas').value;
+            const valorMilheiroInput = document.getElementById('valorMilheiro').value;
+            const taxasInput = document.getElementById('taxas').value;
+
+            let valorPix = '';
+            let valorCartao = '';
+
+            if (milhasInput && valorMilheiroInput) {
+                const milhasNum = parseFloat(milhasInput.replace(/[^\d]/g, ''));
+                const valorMilheiroNum = parseFloat(valorMilheiroInput.replace(/[^\d,]/g, '').replace(',', '.'));
+                const custoMilhas = (milhasNum / 1000) * valorMilheiroNum;
+                const taxasNum = taxasInput ? parseFloat(taxasInput.replace(/[^\d,]/g, '').replace(',', '.')) : 0;
+                const custoTotalPix = custoMilhas + (isNaN(taxasNum) ? 0 : taxasNum);
+                const custoTotalCartao = custoTotalPix * 1.088;
+
+                valorPix = custoTotalPix.toFixed(2);
+                valorCartao = custoTotalCartao.toFixed(2);
+            }
+
+            // Montar URL com parâmetros: o=origem, d=destino, c=companhia, v=valorPix, i=valorCartao
+            let url = urlBase + '?';
+            const params = [];
+            if (origem) params.push(`o=${origem}`);
+            if (destino) params.push(`d=${destino}`);
+            if (cia) params.push(`c=${cia}`);
+            if (valorPix) params.push(`v=${valorPix}`);
+            if (valorCartao) params.push(`i=${valorCartao}`);
+
+            url += params.join('&');
+            return url;
+        }
+
+        function formatarDatasParaPost(datasTexto) {
+            if (!datasTexto || datasTexto.trim() === '') {
+                return '';
+            }
+
+            // Entrada esperada: "Mar: 16, 17, 18\nAbr: 01, 02, 03"
+            // Saída: formatado com emojis por mês
+            const linhas = datasTexto.split('\n').filter(l => l.trim() !== '');
+            const datasFormatadas = linhas.map(linha => {
+                const partes = linha.split(':');
+                if (partes.length === 2) {
+                    const mes = partes[0].trim();
+                    const dias = partes[1].trim();
+                    return `📅 ${mes}: ${dias}`;
+                }
+                return linha;
+            });
+
+            return '\n\n🗓️ DATAS DISPONÍVEIS:\n' + datasFormatadas.join('\n');
+        }
+
+        function gerarPostCompleto() {
+            // Validar campos obrigatórios
+            const itinerario = document.getElementById('itinerario').value;
+            const companhia = document.getElementById('companhia').value;
+
+            if (!itinerario) {
+                alert('Por favor, preencha o itinerário primeiro!');
+                return;
+            }
+
+            // Calcular valores
+            const milhasInput = document.getElementById('milhas').value;
+            const valorMilheiroInput = document.getElementById('valorMilheiro').value;
+            const taxasInput = document.getElementById('taxas').value;
+
+            if (!milhasInput || !valorMilheiroInput) {
+                alert('Por favor, preencha Milhas e Valor do Milheiro!');
+                return;
+            }
+
+            const milhasNum = parseFloat(milhasInput.replace(/[^\d]/g, ''));
+            const valorMilheiroNum = parseFloat(valorMilheiroInput.replace(/[^\d,]/g, '').replace(',', '.'));
+            const custoMilhas = (milhasNum / 1000) * valorMilheiroNum;
+            const taxasNum = taxasInput ? parseFloat(taxasInput.replace(/[^\d,]/g, '').replace(',', '.')) : 0;
+            const custoTotalPix = custoMilhas + (isNaN(taxasNum) ? 0 : taxasNum);
+            const custoTotalCartao = custoTotalPix * 1.088;
+            const parcelaCartao = custoTotalCartao / 5;
+
+            const valorPixFormatado = `R$ ${custoTotalPix.toFixed(2).replace('.', ',')}`;
+            const valorCartaoFormatado = `R$ ${custoTotalCartao.toFixed(2).replace('.', ',')}`;
+            const parcelaFormatada = `R$ ${parcelaCartao.toFixed(2).replace('.', ',')}`;
+
+            // Pegar preço médio
+            const precoMedioInput = document.getElementById('precoMedio').value;
+            let economiaTexto = '';
+            if (precoMedioInput) {
+                const precoMedioNum = parseFloat(precoMedioInput.replace(/[^\d,]/g, '').replace(',', '.'));
+                const economia = precoMedioNum - custoTotalPix;
+                if (economia > 0) {
+                    economiaTexto = `\n💰 ECONOMIA: R$ ${economia.toFixed(2).replace('.', ',')} em relação ao preço médio de mercado!`;
+                }
+            }
+
+            // Formatar datas
+            const datasTexto = document.getElementById('datasDisponiveis').value;
+            const datasFormatadas = formatarDatasParaPost(datasTexto);
+
+            // Gerar link da landing page
+            const linkCompleto = gerarLinkLandingPage();
+
+            // Montar o post completo
+            const post = `🔥 ALERTA DE PASSAGEM 🔥
+
+✈️ ${itinerario}
+💵 PIX: ${valorPixFormatado}
+💳 CARTÃO: ${valorCartaoFormatado} (5x de ${parcelaFormatada})${companhia ? '\n🏢 ' + companhia : ''}${economiaTexto}${datasFormatadas}
+
+⚠️ Poucas tarifas disponíveis!
+
+🔗 Reserve agora: ${linkCompleto}
+
+#VoeComKennedy #Milhas #PassagensAéreas #Viagem`;
+
+            // Copiar para clipboard
+            navigator.clipboard.writeText(post).then(() => {
+                alert('✅ Post completo copiado para a área de transferência!\n\nAgora você pode colar nos grupos do WhatsApp/Telegram.');
+
+                // Mostrar preview do post
+                console.log('POST GERADO:\n' + post);
+            }).catch(err => {
+                alert('Post gerado! Copie manualmente:\n\n' + post);
+            });
+
+            // Salvar o link no campo de link
+            document.getElementById('link').value = linkCompleto;
         }
 
         // Event listeners para calcular em tempo real
