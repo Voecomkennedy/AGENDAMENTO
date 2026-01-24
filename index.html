@@ -458,6 +458,7 @@
             <button class="tab" onclick="showTab('disponibilidade')">Disponibilidade</button>
             <button class="tab" onclick="showTab('agendamentos')">Agendamentos</button>
             <button class="tab" onclick="showTab('historico')">Histórico</button>
+            <button class="tab" onclick="showTab('analises')">Análises</button>
             <button class="tab" onclick="showTab('configuracoes')">Configurações</button>
         </div>
         
@@ -539,10 +540,23 @@
                         <input type="text" id="milhas" placeholder="Ex: 15.000">
                     </div>
                     <div class="form-group">
-                        <label>Taxas de Embarque</label>
-                        <input type="text" id="taxas" placeholder="Ex: R$ 250,00">
+                        <label>Valor do Milheiro (R$)</label>
+                        <input type="text" id="valorMilheiro" placeholder="Ex: 31,00">
+                    </div>
+                    <div class="form-group">
+                        <label>Taxas de Embarque (R$)</label>
+                        <input type="text" id="taxas" placeholder="Ex: 250,00">
+                    </div>
+                    <div class="form-group">
+                        <label>Anotações/Observações</label>
+                        <input type="text" id="observacoes" placeholder="Ex: Melhor preço do mês, expira rápido...">
                     </div>
                 </div>
+
+                <div class="info-text" style="margin-top: 15px; margin-bottom: 15px;">
+                    <strong>CUSTO TOTAL ESTIMADO:</strong> <span id="custoTotal" style="color: #d4af37; font-size: 1.2em; font-weight: bold;">-</span>
+                </div>
+
                 <div style="display: flex; gap: 10px;">
                     <button type="submit" class="btn btn-primary" id="btnSubmit">Cadastrar Agendamento</button>
                     <button type="button" class="btn btn-secondary" id="btnCancelar" onclick="cancelarEdicao()" style="display: none;">Cancelar Edição</button>
@@ -638,6 +652,35 @@
             <div id="listaHistorico"></div>
         </div>
 
+        <div id="analises" class="tab-content">
+            <h2>Análises e Insights</h2>
+
+            <div class="info-text">
+                Análises baseadas em todo o histórico de agendamentos (ativos + arquivados)
+            </div>
+
+            <h3>Comparador de Companhias Aéreas</h3>
+            <div class="form-group" style="max-width: 400px; margin-bottom: 20px;">
+                <label>Filtrar por Itinerário (opcional)</label>
+                <input type="text" id="filtro_comparador" placeholder="Ex: GRU - RIO" onkeyup="atualizarComparador()">
+            </div>
+            <div id="comparadorCompanhias"></div>
+
+            <h3 style="margin-top: 40px;">Análise de Sazonalidade</h3>
+            <div class="form-group" style="max-width: 400px; margin-bottom: 20px;">
+                <label>Selecione a Região</label>
+                <select id="filtro_sazonalidade" onchange="atualizarSazonalidade()">
+                    <option value="todas">Todas as Regiões</option>
+                    <option value="Norte">Norte</option>
+                    <option value="Nordeste">Nordeste</option>
+                    <option value="Centro-Oeste">Centro-Oeste</option>
+                    <option value="Sudeste">Sudeste</option>
+                    <option value="Sul">Sul</option>
+                </select>
+            </div>
+            <div id="sazonalidade"></div>
+        </div>
+
         <div id="configuracoes" class="tab-content">
             <h2>Configurações e Dados</h2>
             <div style="display: flex; gap: 10px; margin-top: 20px; flex-wrap: wrap;">
@@ -655,7 +698,7 @@
                 2. Selecione o arquivo "agendamentos_para_importar.json"<br>
                 3. Os dados serão carregados automaticamente!
             </div>
-            
+
             <div class="config-section">
                 <h3>Sobre o Sistema</h3>
                 <p>Sistema de Controle de Agendamentos - Versão 1.0</p>
@@ -668,6 +711,7 @@
     <script>
         let agendamentos = [];
         let historico = [];
+        let cotacaoMilha = 0.015; // Valor padrão
 
         function carregarDados() {
             const dadosSalvos = localStorage.getItem('agendamentos');
@@ -681,6 +725,12 @@
             const historicoSalvo = localStorage.getItem('historico');
             if (historicoSalvo) {
                 historico = JSON.parse(historicoSalvo);
+            }
+
+            const cotacaoSalva = localStorage.getItem('cotacaoMilha');
+            if (cotacaoSalva) {
+                cotacaoMilha = parseFloat(cotacaoSalva);
+                document.getElementById('cotacaoMilha').value = cotacaoMilha;
             }
 
             atualizarTudo();
@@ -704,6 +754,9 @@
                 renderizarListaAgendamentos();
             } else if (tabName === 'historico') {
                 filtrarHistorico();
+            } else if (tabName === 'analises') {
+                atualizarComparador();
+                atualizarSazonalidade();
             }
         }
         
@@ -718,7 +771,9 @@
             const recorrencia = document.getElementById('recorrencia').value;
             const link = document.getElementById('link').value;
             const milhas = document.getElementById('milhas').value;
+            const valorMilheiro = document.getElementById('valorMilheiro').value;
             const taxas = document.getElementById('taxas').value;
+            const observacoes = document.getElementById('observacoes').value;
 
             const dataObj = new Date(data + 'T00:00:00');
             const diasSemana = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado'];
@@ -741,7 +796,9 @@
                     recorrencia: recorrencia,
                     link: link,
                     milhas: milhas,
+                    valorMilheiro: valorMilheiro,
                     taxas: taxas,
+                    observacoes: observacoes,
                     data_cadastro: agendamentoOriginal.data_cadastro,
                     hora_cadastro: agendamentoOriginal.hora_cadastro,
                     status: 'Agendado'
@@ -768,7 +825,9 @@
                     recorrencia: recorrencia,
                     link: link,
                     milhas: milhas,
+                    valorMilheiro: valorMilheiro,
                     taxas: taxas,
+                    observacoes: observacoes,
                     data_cadastro: dataCadastro,
                     hora_cadastro: horaCadastro,
                     status: 'Agendado'
@@ -797,7 +856,12 @@
             document.getElementById('recorrencia').value = ag.recorrencia;
             document.getElementById('link').value = ag.link || '';
             document.getElementById('milhas').value = ag.milhas || '';
+            document.getElementById('valorMilheiro').value = ag.valorMilheiro || '';
             document.getElementById('taxas').value = ag.taxas || '';
+            document.getElementById('observacoes').value = ag.observacoes || '';
+
+            // Calcular custo total
+            calcularCustoTotal();
 
             // Marcar como editando
             document.getElementById('editandoIndex').value = index;
@@ -987,7 +1051,7 @@
             }
             
             let html = '<table class="agendamentos-table"><thead><tr>';
-            html += '<th>Data Agend.</th><th>Dia</th><th>Horário</th><th>Itinerário</th><th>Cia Aérea</th><th>Região</th><th>Recorrência</th><th>Milhas</th><th>Taxas</th><th>Cadastrado em</th><th>Link</th><th>Ações</th>';
+            html += '<th>Data Agend.</th><th>Dia</th><th>Horário</th><th>Itinerário</th><th>Cia Aérea</th><th>Região</th><th>Recorrência</th><th>Milhas</th><th>R$/Milheiro</th><th>Taxas</th><th>Custo Total</th><th>Observações</th><th>Cadastrado em</th><th>Link</th><th>Ações</th>';
             html += '</tr></thead><tbody>';
 
             agendamentosFiltrados.forEach((ag, index) => {
@@ -996,9 +1060,22 @@
                 const realIndex = agendamentos.indexOf(ag);
                 const linkBtn = ag.link ? `<button class="btn btn-secondary" style="padding: 6px 12px; font-size: 0.8em;" onclick="window.open('${ag.link}', '_blank')">Abrir</button>` : '-';
                 const milhasTexto = ag.milhas || '-';
+                const valorMilheiroTexto = ag.valorMilheiro ? 'R$ ' + ag.valorMilheiro : '-';
                 const taxasTexto = ag.taxas || '-';
                 const companhiaTexto = ag.companhia || '-';
+                const obsTexto = ag.observacoes || '-';
                 const cadastroTexto = ag.data_cadastro && ag.hora_cadastro ? `${ag.data_cadastro}<br>${ag.hora_cadastro}` : '-';
+
+                // Calcular custo total
+                let custoTotalTexto = '-';
+                if (ag.milhas && ag.valorMilheiro) {
+                    const milhasNum = parseFloat(ag.milhas.replace(/[^\d]/g, ''));
+                    const valorMilheiroNum = parseFloat(ag.valorMilheiro.replace(/[^\d,]/g, '').replace(',', '.'));
+                    const taxasNum = ag.taxas ? parseFloat(ag.taxas.replace(/[^\d,]/g, '').replace(',', '.')) : 0;
+                    const custoMilhas = (milhasNum / 1000) * valorMilheiroNum;
+                    const total = custoMilhas + taxasNum;
+                    custoTotalTexto = 'R$ ' + total.toFixed(2).replace('.', ',');
+                }
                 html += `<tr>
                     <td>${ag.data}</td>
                     <td>${ag.dia_semana}</td>
@@ -1008,13 +1085,17 @@
                     <td>${ag.regiao}</td>
                     <td><span class="badge ${badgeClass}">${ag.recorrencia}</span></td>
                     <td>${milhasTexto}</td>
+                    <td>${valorMilheiroTexto}</td>
                     <td>${taxasTexto}</td>
+                    <td style="font-weight: bold; color: #d4af37;">${custoTotalTexto}</td>
+                    <td style="font-size: 0.85em; max-width: 200px;">${obsTexto}</td>
                     <td style="font-size: 0.85em;">${cadastroTexto}</td>
                     <td>${linkBtn}</td>
                     <td>
-                        <div style="display: flex; gap: 5px;">
-                            <button class="btn btn-secondary" style="padding: 8px 16px; font-size: 0.85em;" onclick="editarAgendamento(${realIndex})">Editar</button>
-                            <button class="btn btn-danger" style="padding: 8px 16px; font-size: 0.85em;" onclick="excluirAgendamento(${realIndex})">Arquivar</button>
+                        <div style="display: flex; gap: 5px; flex-wrap: wrap;">
+                            <button class="btn btn-primary" style="padding: 6px 12px; font-size: 0.8em;" onclick='gerarPostRedeSocial(${JSON.stringify(ag).replace(/'/g, "\\'")})'>Gerar Post</button>
+                            <button class="btn btn-secondary" style="padding: 6px 12px; font-size: 0.8em;" onclick="editarAgendamento(${realIndex})">Editar</button>
+                            <button class="btn btn-danger" style="padding: 6px 12px; font-size: 0.8em;" onclick="excluirAgendamento(${realIndex})">Arquivar</button>
                         </div>
                     </td>
                 </tr>`;
@@ -1057,9 +1138,9 @@
         }
         
         function exportarExcel() {
-            let csv = 'Data Agendamento,Dia Semana,Horário,Itinerário,Companhia,Região,Recorrência,Milhas,Taxas,Data Cadastro,Hora Cadastro,Link,Status\n';
+            let csv = 'Data Agendamento,Dia Semana,Horário,Itinerário,Companhia,Região,Recorrência,Milhas,Valor Milheiro,Taxas,Observações,Data Cadastro,Hora Cadastro,Link,Status\n';
             agendamentos.forEach(ag => {
-                csv += `${ag.data},${ag.dia_semana},${ag.horario},${ag.itinerario},"${ag.companhia || ''}",${ag.regiao},${ag.recorrencia},"${ag.milhas || ''}","${ag.taxas || ''}","${ag.data_cadastro || ''}","${ag.hora_cadastro || ''}","${ag.link || ''}",${ag.status}\n`;
+                csv += `${ag.data},${ag.dia_semana},${ag.horario},${ag.itinerario},"${ag.companhia || ''}",${ag.regiao},${ag.recorrencia},"${ag.milhas || ''}","${ag.valorMilheiro || ''}","${ag.taxas || ''}","${ag.observacoes || ''}","${ag.data_cadastro || ''}","${ag.hora_cadastro || ''}","${ag.link || ''}",${ag.status}\n`;
             });
 
             const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
@@ -1090,9 +1171,9 @@
                 return;
             }
 
-            let csv = 'Data Agendamento,Dia Semana,Horário,Itinerário,Companhia,Região,Recorrência,Milhas,Taxas,Data Cadastro,Hora Cadastro,Data Arquivamento,Hora Arquivamento,Link\n';
+            let csv = 'Data Agendamento,Dia Semana,Horário,Itinerário,Companhia,Região,Recorrência,Milhas,Valor Milheiro,Taxas,Observações,Data Cadastro,Hora Cadastro,Data Arquivamento,Hora Arquivamento,Link\n';
             historico.forEach(ag => {
-                csv += `${ag.data},${ag.dia_semana},${ag.horario},${ag.itinerario},"${ag.companhia || ''}",${ag.regiao},${ag.recorrencia},"${ag.milhas || ''}","${ag.taxas || ''}","${ag.data_cadastro || ''}","${ag.hora_cadastro || ''}","${ag.data_arquivamento || ''}","${ag.hora_arquivamento || ''}","${ag.link || ''}"\n`;
+                csv += `${ag.data},${ag.dia_semana},${ag.horario},${ag.itinerario},"${ag.companhia || ''}",${ag.regiao},${ag.recorrencia},"${ag.milhas || ''}","${ag.valorMilheiro || ''}","${ag.taxas || ''}","${ag.observacoes || ''}","${ag.data_cadastro || ''}","${ag.hora_cadastro || ''}","${ag.data_arquivamento || ''}","${ag.hora_arquivamento || ''}","${ag.link || ''}"\n`;
             });
 
             const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
@@ -1335,6 +1416,273 @@
 
                 alert('Agendamento restaurado com sucesso!');
             }
+        }
+
+        // ===== CALCULADORA DE CUSTO TOTAL =====
+
+        function calcularCustoTotal() {
+            const milhasInput = document.getElementById('milhas').value;
+            const valorMilheiroInput = document.getElementById('valorMilheiro').value;
+            const taxasInput = document.getElementById('taxas').value;
+
+            if (!milhasInput && !taxasInput) {
+                document.getElementById('custoTotal').textContent = '-';
+                return;
+            }
+
+            // Extrair número de milhas
+            const milhasNum = parseFloat(milhasInput.replace(/[^\d]/g, ''));
+
+            // Extrair valor do milheiro
+            const valorMilheiroNum = parseFloat(valorMilheiroInput.replace(/[^\d,]/g, '').replace(',', '.'));
+
+            // Calcular custo das milhas: (milhas / 1000) × valor do milheiro
+            const custoMilhas = (!isNaN(milhasNum) && !isNaN(valorMilheiroNum)) ? (milhasNum / 1000) * valorMilheiroNum : 0;
+
+            // Extrair valor das taxas
+            const taxasNum = parseFloat(taxasInput.replace(/[^\d,]/g, '').replace(',', '.'));
+            const custoTaxas = isNaN(taxasNum) ? 0 : taxasNum;
+
+            const total = custoMilhas + custoTaxas;
+
+            if (total > 0) {
+                const detalhes = [];
+                if (custoMilhas > 0) {
+                    detalhes.push(`${milhasNum.toLocaleString('pt-BR')} milhas × R$ ${valorMilheiroNum.toFixed(2)} = R$ ${custoMilhas.toFixed(2)}`);
+                }
+                if (custoTaxas > 0) {
+                    detalhes.push(`Taxas: R$ ${custoTaxas.toFixed(2)}`);
+                }
+
+                document.getElementById('custoTotal').textContent =
+                    `R$ ${total.toFixed(2).replace('.', ',')} (${detalhes.join(' + ')})`;
+            } else {
+                document.getElementById('custoTotal').textContent = '-';
+            }
+        }
+
+        function salvarCotacao() {
+            const valor = parseFloat(document.getElementById('cotacaoMilha').value);
+            if (!isNaN(valor) && valor > 0) {
+                cotacaoMilha = valor;
+                localStorage.setItem('cotacaoMilha', cotacaoMilha);
+                calcularCustoTotal();
+                alert('Cotação salva com sucesso!');
+            }
+        }
+
+        // Event listeners para calcular em tempo real
+        document.addEventListener('DOMContentLoaded', function() {
+            document.getElementById('milhas')?.addEventListener('input', calcularCustoTotal);
+            document.getElementById('valorMilheiro')?.addEventListener('input', calcularCustoTotal);
+            document.getElementById('taxas')?.addEventListener('input', calcularCustoTotal);
+        });
+
+        // ===== COMPARADOR DE COMPANHIAS =====
+
+        function atualizarComparador() {
+            const filtroItinerario = document.getElementById('filtro_comparador')?.value.toLowerCase() || '';
+
+            // Combinar ativos e histórico
+            const todosDados = [...agendamentos, ...historico];
+
+            let dadosFiltrados = todosDados;
+            if (filtroItinerario) {
+                dadosFiltrados = todosDados.filter(d => d.itinerario.toLowerCase().includes(filtroItinerario));
+            }
+
+            const companhias = ['Azul', 'Smiles', 'Latam'];
+            const estatisticas = {};
+
+            companhias.forEach(cia => {
+                const dados = dadosFiltrados.filter(d => d.companhia === cia);
+
+                if (dados.length === 0) {
+                    estatisticas[cia] = null;
+                    return;
+                }
+
+                // Média de milhas
+                const dadosComMilhas = dados.filter(d => d.milhas && d.milhas.trim() !== '');
+                let mediaMilhas = 0;
+                if (dadosComMilhas.length > 0) {
+                    const soma = dadosComMilhas.reduce((acc, d) => {
+                        const valor = parseFloat(d.milhas.replace(/[^\d]/g, ''));
+                        return acc + (isNaN(valor) ? 0 : valor);
+                    }, 0);
+                    mediaMilhas = Math.round(soma / dadosComMilhas.length);
+                }
+
+                // Média de taxas
+                const dadosComTaxas = dados.filter(d => d.taxas && d.taxas.trim() !== '');
+                let mediaTaxas = 0;
+                if (dadosComTaxas.length > 0) {
+                    const soma = dadosComTaxas.reduce((acc, d) => {
+                        const valor = parseFloat(d.taxas.replace(/[^\d,]/g, '').replace(',', '.'));
+                        return acc + (isNaN(valor) ? 0 : valor);
+                    }, 0);
+                    mediaTaxas = soma / dadosComTaxas.length;
+                }
+
+                const custoTotal = (mediaMilhas * cotacaoMilha) + mediaTaxas;
+
+                estatisticas[cia] = {
+                    total: dados.length,
+                    mediaMilhas: mediaMilhas,
+                    mediaTaxas: mediaTaxas,
+                    custoTotal: custoTotal
+                };
+            });
+
+            let html = '';
+
+            if (Object.values(estatisticas).every(e => e === null)) {
+                html = '<div class="empty-state"><h3>Nenhum dado disponível</h3><p>Cadastre agendamentos para ver as estatísticas</p></div>';
+            } else {
+                html += '<div class="stats-grid">';
+
+                companhias.forEach(cia => {
+                    const stats = estatisticas[cia];
+                    if (!stats) {
+                        html += `
+                            <div class="stat-card" style="opacity: 0.5;">
+                                <h3>${cia}</h3>
+                                <div class="value" style="font-size: 1.5em;">Sem dados</div>
+                            </div>
+                        `;
+                        return;
+                    }
+
+                    html += `
+                        <div class="stat-card">
+                            <h3>${cia}</h3>
+                            <div class="value" style="font-size: 1.3em; margin-bottom: 10px;">R$ ${stats.custoTotal.toFixed(2)}</div>
+                            <p style="color: #b0b0b0; font-size: 0.85em; margin: 5px 0;">
+                                <strong>Milhas:</strong> ${stats.mediaMilhas.toLocaleString('pt-BR')}<br>
+                                <strong>Taxas:</strong> R$ ${stats.mediaTaxas.toFixed(2)}<br>
+                                <strong>Registros:</strong> ${stats.total}
+                            </p>
+                        </div>
+                    `;
+                });
+
+                html += '</div>';
+
+                // Encontrar melhor opção
+                const validos = Object.entries(estatisticas).filter(([_, v]) => v !== null);
+                if (validos.length > 0) {
+                    const melhor = validos.reduce((min, [cia, stats]) =>
+                        stats.custoTotal < min.stats.custoTotal ? {cia, stats} : min
+                    , {cia: validos[0][0], stats: validos[0][1]});
+
+                    html += `
+                        <div class="info-text" style="margin-top: 20px;">
+                            <strong>*** Melhor Custo-Benefício:</strong> ${melhor.cia} com custo médio de R$ ${melhor.stats.custoTotal.toFixed(2)}
+                        </div>
+                    `;
+                }
+            }
+
+            document.getElementById('comparadorCompanhias').innerHTML = html;
+        }
+
+        // ===== ANÁLISE DE SAZONALIDADE =====
+
+        function atualizarSazonalidade() {
+            const regiaoFiltro = document.getElementById('filtro_sazonalidade')?.value || 'todas';
+
+            const todosDados = [...agendamentos, ...historico];
+            let dadosFiltrados = todosDados;
+
+            if (regiaoFiltro !== 'todas') {
+                dadosFiltrados = todosDados.filter(d => d.regiao === regiaoFiltro);
+            }
+
+            // Agrupar por mês
+            const meses = {
+                '01': 'Janeiro', '02': 'Fevereiro', '03': 'Março', '04': 'Abril',
+                '05': 'Maio', '06': 'Junho', '07': 'Julho', '08': 'Agosto',
+                '09': 'Setembro', '10': 'Outubro', '11': 'Novembro', '12': 'Dezembro'
+            };
+
+            const porMes = {};
+            Object.keys(meses).forEach(m => porMes[m] = 0);
+
+            dadosFiltrados.forEach(d => {
+                if (d.data_cadastro) {
+                    const [dia, mes, ano] = d.data_cadastro.split('/');
+                    if (mes && porMes[mes] !== undefined) {
+                        porMes[mes]++;
+                    }
+                }
+            });
+
+            const total = Object.values(porMes).reduce((a, b) => a + b, 0);
+
+            let html = '';
+
+            if (total === 0) {
+                html = '<div class="empty-state"><h3>Nenhum dado disponível</h3><p>Aguarde até ter histórico com datas de cadastro</p></div>';
+            } else {
+                html += '<p style="color: #b0b0b0; margin-bottom: 20px;">Quantidade de promoções cadastradas por mês</p>';
+
+                Object.entries(porMes).forEach(([mes, qtd]) => {
+                    const percent = total > 0 ? (qtd / total * 100).toFixed(1) : 0;
+                    const larguraBarra = total > 0 ? (qtd / total * 100) : 0;
+
+                    html += `
+                        <div class="distribuicao-box" style="position: relative; overflow: hidden;">
+                            <div style="position: absolute; left: 0; top: 0; bottom: 0; width: ${larguraBarra}%; background: rgba(212, 175, 55, 0.15); z-index: 0;"></div>
+                            <span style="position: relative; z-index: 1;">${meses[mes]}</span>
+                            <span style="position: relative; z-index: 1;">${qtd}</span>
+                            <span style="position: relative; z-index: 1;">${percent}%</span>
+                        </div>
+                    `;
+                });
+
+                // Destacar melhor mês
+                const melhorMes = Object.entries(porMes).reduce((max, [mes, qtd]) =>
+                    qtd > max.qtd ? {mes, qtd} : max
+                , {mes: '01', qtd: 0});
+
+                if (melhorMes.qtd > 0) {
+                    html += `
+                        <div class="info-text" style="margin-top: 20px;">
+                            <strong>*** Mês com Mais Promoções:</strong> ${meses[melhorMes.mes]} com ${melhorMes.qtd} registros (${(melhorMes.qtd / total * 100).toFixed(1)}%)
+                        </div>
+                    `;
+                }
+            }
+
+            document.getElementById('sazonalidade').innerHTML = html;
+        }
+
+        // ===== EXPORTAR PARA REDES SOCIAIS =====
+
+        function gerarPostRedeSocial(agendamento) {
+            const milhas = agendamento.milhas || 'N/A';
+            const taxas = agendamento.taxas || 'N/A';
+            const itinerario = agendamento.itinerario;
+            const companhia = agendamento.companhia || '';
+
+            const post = `*** ALERTA DE MILHAS ***
+
+${itinerario}
+Milhas: ${milhas}
+Taxas: ${taxas}
+${companhia ? 'Companhia: ' + companhia : ''}
+
+Aproveite enquanto dura!
+
+${agendamento.link || ''}`;
+
+            // Copiar para clipboard
+            navigator.clipboard.writeText(post).then(() => {
+                alert('Post copiado para área de transferência!\n\nCole agora no WhatsApp, Instagram ou Telegram!');
+            }).catch(() => {
+                // Fallback: mostrar em alert
+                alert('Post gerado:\n\n' + post);
+            });
         }
 
         const DADOS_INICIAIS =
