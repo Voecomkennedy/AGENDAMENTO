@@ -457,6 +457,7 @@
             <button class="tab" onclick="showTab('cadastro')">Cadastrar</button>
             <button class="tab" onclick="showTab('disponibilidade')">Disponibilidade</button>
             <button class="tab" onclick="showTab('agendamentos')">Agendamentos</button>
+            <button class="tab" onclick="showTab('historico')">Histórico</button>
             <button class="tab" onclick="showTab('configuracoes')">Configurações</button>
         </div>
         
@@ -585,14 +586,66 @@
             
             <div id="listaAgendamentos"></div>
         </div>
-        
+
+        <div id="historico" class="tab-content">
+            <h2>Histórico de Agendamentos Arquivados</h2>
+
+            <div class="info-text">
+                Este é seu banco de dados histórico. Aqui ficam todos os agendamentos arquivados para análise futura.
+            </div>
+
+            <h3>Filtros e Relatórios</h3>
+            <div class="form-grid" style="margin-bottom: 25px;">
+                <div class="form-group">
+                    <label>Período</label>
+                    <select id="filtro_periodo" onchange="filtrarHistorico()">
+                        <option value="todos">Todos os períodos</option>
+                        <option value="30">Últimos 30 dias</option>
+                        <option value="90">Últimos 3 meses</option>
+                        <option value="180">Últimos 6 meses</option>
+                        <option value="365">Último ano</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Itinerário</label>
+                    <input type="text" id="filtro_itinerario" placeholder="Ex: GRU - RIO" onkeyup="filtrarHistorico()">
+                </div>
+                <div class="form-group">
+                    <label>Companhia</label>
+                    <select id="filtro_companhia" onchange="filtrarHistorico()">
+                        <option value="todas">Todas</option>
+                        <option value="Azul">Azul</option>
+                        <option value="Smiles">Smiles</option>
+                        <option value="Latam">Latam</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Região</label>
+                    <select id="filtro_regiao_hist" onchange="filtrarHistorico()">
+                        <option value="todas">Todas</option>
+                        <option value="Norte">Norte</option>
+                        <option value="Nordeste">Nordeste</option>
+                        <option value="Centro-Oeste">Centro-Oeste</option>
+                        <option value="Sudeste">Sudeste</option>
+                        <option value="Sul">Sul</option>
+                    </select>
+                </div>
+            </div>
+
+            <div id="estatisticasHistorico"></div>
+
+            <h3>Registros Arquivados</h3>
+            <div id="listaHistorico"></div>
+        </div>
+
         <div id="configuracoes" class="tab-content">
             <h2>Configurações e Dados</h2>
             <div style="display: flex; gap: 10px; margin-top: 20px; flex-wrap: wrap;">
                 <button class="btn btn-primary" onclick="document.getElementById('fileImport').click()">Importar Dados (JSON)</button>
                 <input type="file" id="fileImport" accept=".json" style="display: none;" onchange="importarDados(event)">
-                <button class="btn btn-primary" onclick="exportarExcel()">Exportar para Excel</button>
-                <button class="btn btn-secondary" onclick="backupDados()">Backup dos Dados</button>
+                <button class="btn btn-primary" onclick="exportarExcel()">Exportar Agendamentos (CSV)</button>
+                <button class="btn btn-primary" onclick="exportarHistorico()">Exportar Histórico (CSV)</button>
+                <button class="btn btn-secondary" onclick="backupDados()">Backup Completo</button>
                 <button class="btn btn-danger" onclick="limparTodos()">Limpar Todos os Dados</button>
             </div>
 
@@ -614,7 +667,8 @@
 
     <script>
         let agendamentos = [];
-        
+        let historico = [];
+
         function carregarDados() {
             const dadosSalvos = localStorage.getItem('agendamentos');
             if (dadosSalvos) {
@@ -623,11 +677,18 @@
                 agendamentos = DADOS_INICIAIS;
                 salvarDados();
             }
+
+            const historicoSalvo = localStorage.getItem('historico');
+            if (historicoSalvo) {
+                historico = JSON.parse(historicoSalvo);
+            }
+
             atualizarTudo();
         }
-        
+
         function salvarDados() {
             localStorage.setItem('agendamentos', JSON.stringify(agendamentos));
+            localStorage.setItem('historico', JSON.stringify(historico));
         }
         
         function showTab(tabName) {
@@ -641,6 +702,8 @@
                 renderizarDisponibilidade();
             } else if (tabName === 'agendamentos') {
                 renderizarListaAgendamentos();
+            } else if (tabName === 'historico') {
+                filtrarHistorico();
             }
         }
         
@@ -951,7 +1014,7 @@
                     <td>
                         <div style="display: flex; gap: 5px;">
                             <button class="btn btn-secondary" style="padding: 8px 16px; font-size: 0.85em;" onclick="editarAgendamento(${realIndex})">Editar</button>
-                            <button class="btn btn-danger" style="padding: 8px 16px; font-size: 0.85em;" onclick="excluirAgendamento(${realIndex})">Excluir</button>
+                            <button class="btn btn-danger" style="padding: 8px 16px; font-size: 0.85em;" onclick="excluirAgendamento(${realIndex})">Arquivar</button>
                         </div>
                     </td>
                 </tr>`;
@@ -973,11 +1036,23 @@
         }
         
         function excluirAgendamento(index) {
-            if (confirm('Tem certeza que deseja excluir este agendamento?')) {
+            if (confirm('Deseja arquivar este agendamento? Ele será movido para o Histórico.')) {
+                const agendamento = agendamentos[index];
+
+                // Adicionar data de arquivamento
+                const agora = new Date();
+                agendamento.data_arquivamento = agora.toLocaleDateString('pt-BR');
+                agendamento.hora_arquivamento = agora.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+
+                // Mover para histórico
+                historico.push(agendamento);
+
+                // Remover dos agendamentos ativos
                 agendamentos.splice(index, 1);
+
                 salvarDados();
                 atualizarTudo();
-                alert('Agendamento excluído com sucesso!');
+                alert('Agendamento arquivado com sucesso! Veja na aba Histórico.');
             }
         }
         
@@ -996,12 +1071,36 @@
         }
         
         function backupDados() {
-            const blob = new Blob([JSON.stringify(agendamentos, null, 2)], { type: 'application/json' });
+            const backup = {
+                agendamentos: agendamentos,
+                historico: historico,
+                data_backup: new Date().toLocaleString('pt-BR')
+            };
+            const blob = new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' });
             const link = document.createElement('a');
             link.href = URL.createObjectURL(blob);
-            link.download = 'backup_agendamentos_' + new Date().toISOString().split('T')[0] + '.json';
+            link.download = 'backup_completo_' + new Date().toISOString().split('T')[0] + '.json';
             link.click();
-            alert('Backup realizado com sucesso!');
+            alert('Backup completo realizado com sucesso!');
+        }
+
+        function exportarHistorico() {
+            if (historico.length === 0) {
+                alert('Não há dados no histórico para exportar!');
+                return;
+            }
+
+            let csv = 'Data Agendamento,Dia Semana,Horário,Itinerário,Companhia,Região,Recorrência,Milhas,Taxas,Data Cadastro,Hora Cadastro,Data Arquivamento,Hora Arquivamento,Link\n';
+            historico.forEach(ag => {
+                csv += `${ag.data},${ag.dia_semana},${ag.horario},${ag.itinerario},"${ag.companhia || ''}",${ag.regiao},${ag.recorrencia},"${ag.milhas || ''}","${ag.taxas || ''}","${ag.data_cadastro || ''}","${ag.hora_cadastro || ''}","${ag.data_arquivamento || ''}","${ag.hora_arquivamento || ''}","${ag.link || ''}"\n`;
+            });
+
+            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = 'historico_' + new Date().toISOString().split('T')[0] + '.csv';
+            link.click();
+            alert('Histórico exportado com sucesso!');
         }
         
         function importarDados(event) {
@@ -1054,9 +1153,192 @@
                 }
             }
         }
-        
-        const DADOS_INICIAIS = 
-        
+
+        // ===== FUNÇÕES DO HISTÓRICO =====
+
+        function filtrarHistorico() {
+            const periodo = document.getElementById('filtro_periodo')?.value || 'todos';
+            const itinerario = document.getElementById('filtro_itinerario')?.value.toLowerCase() || '';
+            const companhia = document.getElementById('filtro_companhia')?.value || 'todas';
+            const regiao = document.getElementById('filtro_regiao_hist')?.value || 'todas';
+
+            let historicoFiltrado = [...historico];
+
+            // Filtrar por período
+            if (periodo !== 'todos') {
+                const diasAtras = parseInt(periodo);
+                const dataLimite = new Date();
+                dataLimite.setDate(dataLimite.getDate() - diasAtras);
+
+                historicoFiltrado = historicoFiltrado.filter(h => {
+                    const dataArq = parseData(h.data_arquivamento);
+                    return dataArq >= dataLimite;
+                });
+            }
+
+            // Filtrar por itinerário
+            if (itinerario) {
+                historicoFiltrado = historicoFiltrado.filter(h =>
+                    h.itinerario.toLowerCase().includes(itinerario)
+                );
+            }
+
+            // Filtrar por companhia
+            if (companhia !== 'todas') {
+                historicoFiltrado = historicoFiltrado.filter(h => h.companhia === companhia);
+            }
+
+            // Filtrar por região
+            if (regiao !== 'todas') {
+                historicoFiltrado = historicoFiltrado.filter(h => h.regiao === regiao);
+            }
+
+            renderizarEstatisticas(historicoFiltrado);
+            renderizarListaHistorico(historicoFiltrado);
+        }
+
+        function renderizarEstatisticas(dados) {
+            if (dados.length === 0) {
+                document.getElementById('estatisticasHistorico').innerHTML = '';
+                return;
+            }
+
+            // Calcular estatísticas
+            const totalRegistros = dados.length;
+
+            // Média de milhas
+            const dadosComMilhas = dados.filter(d => d.milhas && d.milhas.trim() !== '');
+            let mediaMilhas = 0;
+            if (dadosComMilhas.length > 0) {
+                const somaMilhas = dadosComMilhas.reduce((acc, d) => {
+                    const valor = parseFloat(d.milhas.replace(/[^\d]/g, ''));
+                    return acc + (isNaN(valor) ? 0 : valor);
+                }, 0);
+                mediaMilhas = Math.round(somaMilhas / dadosComMilhas.length);
+            }
+
+            // Média de taxas
+            const dadosComTaxas = dados.filter(d => d.taxas && d.taxas.trim() !== '');
+            let mediaTaxas = 0;
+            if (dadosComTaxas.length > 0) {
+                const somaTaxas = dadosComTaxas.reduce((acc, d) => {
+                    const valor = parseFloat(d.taxas.replace(/[^\d,]/g, '').replace(',', '.'));
+                    return acc + (isNaN(valor) ? 0 : valor);
+                }, 0);
+                mediaTaxas = (somaTaxas / dadosComTaxas.length).toFixed(2);
+            }
+
+            // Rotas mais frequentes
+            const rotas = {};
+            dados.forEach(d => {
+                rotas[d.itinerario] = (rotas[d.itinerario] || 0) + 1;
+            });
+            const rotasOrdenadas = Object.entries(rotas)
+                .sort((a, b) => b[1] - a[1])
+                .slice(0, 5);
+
+            let html = '<div class="stats-grid" style="margin-bottom: 30px;">';
+            html += `
+                <div class="stat-card">
+                    <h3>Total de Registros</h3>
+                    <div class="value">${totalRegistros}</div>
+                </div>
+                <div class="stat-card">
+                    <h3>Média de Milhas</h3>
+                    <div class="value">${mediaMilhas > 0 ? mediaMilhas.toLocaleString('pt-BR') : '-'}</div>
+                </div>
+                <div class="stat-card">
+                    <h3>Média de Taxas</h3>
+                    <div class="value">${mediaTaxas > 0 ? 'R$ ' + mediaTaxas : '-'}</div>
+                </div>
+            `;
+            html += '</div>';
+
+            if (rotasOrdenadas.length > 0) {
+                html += '<h3>Top 5 Rotas Mais Frequentes</h3>';
+                rotasOrdenadas.forEach(([rota, qtd]) => {
+                    html += `
+                        <div class="distribuicao-box">
+                            <span>${rota}</span>
+                            <span>${qtd}</span>
+                            <span>${((qtd / totalRegistros) * 100).toFixed(1)}%</span>
+                        </div>
+                    `;
+                });
+            }
+
+            document.getElementById('estatisticasHistorico').innerHTML = html;
+        }
+
+        function renderizarListaHistorico(dados) {
+            if (dados.length === 0) {
+                document.getElementById('listaHistorico').innerHTML = `
+                    <div class="empty-state">
+                        <h3>Nenhum registro encontrado</h3>
+                        <p>Ajuste os filtros ou aguarde até arquivar agendamentos</p>
+                    </div>
+                `;
+                return;
+            }
+
+            let html = '<table class="agendamentos-table"><thead><tr>';
+            html += '<th>Data Agend.</th><th>Itinerário</th><th>Cia Aérea</th><th>Região</th><th>Milhas</th><th>Taxas</th><th>Arquivado em</th><th>Ações</th>';
+            html += '</tr></thead><tbody>';
+
+            dados.forEach((ag, index) => {
+                const milhasTexto = ag.milhas || '-';
+                const taxasTexto = ag.taxas || '-';
+                const companhiaTexto = ag.companhia || '-';
+                const arquivadoTexto = ag.data_arquivamento && ag.hora_arquivamento ? `${ag.data_arquivamento}<br>${ag.hora_arquivamento}` : '-';
+                const linkBtn = ag.link ? `<button class="btn btn-secondary" style="padding: 6px 12px; font-size: 0.8em;" onclick="window.open('${ag.link}', '_blank')">Abrir</button>` : '-';
+
+                const realIndex = historico.indexOf(ag);
+
+                html += `<tr>
+                    <td>${ag.data}</td>
+                    <td>${ag.itinerario}</td>
+                    <td>${companhiaTexto}</td>
+                    <td>${ag.regiao}</td>
+                    <td>${milhasTexto}</td>
+                    <td>${taxasTexto}</td>
+                    <td style="font-size: 0.85em;">${arquivadoTexto}</td>
+                    <td>
+                        <div style="display: flex; gap: 5px;">
+                            ${linkBtn}
+                            <button class="btn btn-primary" style="padding: 6px 12px; font-size: 0.8em;" onclick="restaurarAgendamento(${realIndex})">Restaurar</button>
+                        </div>
+                    </td>
+                </tr>`;
+            });
+
+            html += '</tbody></table>';
+            document.getElementById('listaHistorico').innerHTML = html;
+        }
+
+        function restaurarAgendamento(index) {
+            if (confirm('Deseja restaurar este agendamento para a lista ativa?')) {
+                const agendamento = historico[index];
+
+                // Remover campos de arquivamento
+                delete agendamento.data_arquivamento;
+                delete agendamento.hora_arquivamento;
+
+                // Adicionar de volta aos agendamentos ativos
+                agendamentos.push(agendamento);
+
+                // Remover do histórico
+                historico.splice(index, 1);
+
+                salvarDados();
+                atualizarTudo();
+                filtrarHistorico();
+
+                alert('Agendamento restaurado com sucesso!');
+            }
+        }
+
+        const DADOS_INICIAIS =
+
         carregarDados();
     </script>
 </body>
