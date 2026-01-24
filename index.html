@@ -464,23 +464,57 @@
         
         <div id="dashboard" class="tab-content active">
             <h2>Dashboard Geral</h2>
+
             <div class="stats-grid">
                 <div class="stat-card">
-                    <h3>Total de Agendamentos</h3>
+                    <h3>Total de Agendamentos Ativos</h3>
                     <div class="value" id="totalAgendamentos">0</div>
                 </div>
                 <div class="stat-card">
-                    <h3>Horários Disponíveis</h3>
-                    <div class="value" id="horariosDisponiveis">0</div>
+                    <h3>Histórico Arquivado</h3>
+                    <div class="value" id="totalHistorico">0</div>
                 </div>
                 <div class="stat-card">
                     <h3>Postagens Hoje</h3>
                     <div class="value" id="postagensHoje">0</div>
                 </div>
+                <div class="stat-card">
+                    <h3>Total Geral</h3>
+                    <div class="value" id="totalGeral">0</div>
+                </div>
             </div>
-            
-            <h3>Distribuição por Região</h3>
+
+            <h3 style="margin-top: 30px;">Resumo Financeiro</h3>
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <h3>Valor Médio por Alerta</h3>
+                    <div class="value" style="font-size: 1.8em;" id="valorMedio">-</div>
+                </div>
+                <div class="stat-card">
+                    <h3>Ticket Mais Alto</h3>
+                    <div class="value" style="font-size: 1.8em;" id="ticketAlto">-</div>
+                </div>
+                <div class="stat-card">
+                    <h3>Ticket Mais Baixo</h3>
+                    <div class="value" style="font-size: 1.8em;" id="ticketBaixo">-</div>
+                </div>
+                <div class="stat-card">
+                    <h3>Volume Total</h3>
+                    <div class="value" style="font-size: 1.8em;" id="volumeTotal">-</div>
+                </div>
+            </div>
+
+            <h3 style="margin-top: 30px;">Performance por Companhia</h3>
+            <div id="performanceCompanhias"></div>
+
+            <h3 style="margin-top: 30px;">Top 5 Rotas Mais Lucrativas</h3>
+            <div id="topRotas"></div>
+
+            <h3 style="margin-top: 30px;">Distribuição por Região</h3>
             <div id="distribuicaoRegioes"></div>
+
+            <h3 style="margin-top: 30px;">Últimos 7 Dias</h3>
+            <div id="ultimos7Dias"></div>
         </div>
         
         <div id="cadastro" class="tab-content">
@@ -913,23 +947,112 @@
         }
         
         function atualizarDashboard() {
+            // Estatísticas básicas
             document.getElementById('totalAgendamentos').textContent = agendamentos.length;
-            
-            const totalSlots = 27 * 7;
-            const slotsOcupados = agendamentos.length * 7;
-            document.getElementById('horariosDisponiveis').textContent = Math.max(0, totalSlots - slotsOcupados);
-            
+            document.getElementById('totalHistorico').textContent = historico.length;
+            document.getElementById('totalGeral').textContent = agendamentos.length + historico.length;
+
             const hoje = new Date().toLocaleDateString('pt-BR');
             const postagensHoje = agendamentos.filter(a => a.data === hoje).length;
             document.getElementById('postagensHoje').textContent = postagensHoje;
-            
+
+            // Combinar dados ativos e histórico para análises
+            const todosDados = [...agendamentos, ...historico];
+
+            // Calcular valores (apenas com dados completos)
+            const dadosComValor = todosDados.filter(d => d.milhas && d.valorMilheiro);
+            const valores = dadosComValor.map(d => {
+                const milhasNum = parseFloat(d.milhas.replace(/[^\d]/g, ''));
+                const valorMilheiroNum = parseFloat(d.valorMilheiro.replace(/[^\d,]/g, '').replace(',', '.'));
+                const taxasNum = d.taxas ? parseFloat(d.taxas.replace(/[^\d,]/g, '').replace(',', '.')) : 0;
+                return (milhasNum / 1000) * valorMilheiroNum + taxasNum;
+            });
+
+            if (valores.length > 0) {
+                const soma = valores.reduce((a, b) => a + b, 0);
+                const valorMedio = soma / valores.length;
+                const ticketAlto = Math.max(...valores);
+                const ticketBaixo = Math.min(...valores);
+
+                document.getElementById('valorMedio').textContent = 'R$ ' + valorMedio.toFixed(2).replace('.', ',');
+                document.getElementById('ticketAlto').textContent = 'R$ ' + ticketAlto.toFixed(2).replace('.', ',');
+                document.getElementById('ticketBaixo').textContent = 'R$ ' + ticketBaixo.toFixed(2).replace('.', ',');
+                document.getElementById('volumeTotal').textContent = 'R$ ' + soma.toFixed(2).replace('.', ',');
+            } else {
+                document.getElementById('valorMedio').textContent = '-';
+                document.getElementById('ticketAlto').textContent = '-';
+                document.getElementById('ticketBaixo').textContent = '-';
+                document.getElementById('volumeTotal').textContent = '-';
+            }
+
+            // Performance por Companhia
+            const companhias = ['Azul', 'Smiles', 'Latam'];
+            let htmlComp = '<div class="stats-grid">';
+
+            companhias.forEach(cia => {
+                const dados = dadosComValor.filter(d => d.companhia === cia);
+                if (dados.length > 0) {
+                    const valoresCia = dados.map(d => {
+                        const milhasNum = parseFloat(d.milhas.replace(/[^\d]/g, ''));
+                        const valorMilheiroNum = parseFloat(d.valorMilheiro.replace(/[^\d,]/g, '').replace(',', '.'));
+                        const taxasNum = d.taxas ? parseFloat(d.taxas.replace(/[^\d,]/g, '').replace(',', '.')) : 0;
+                        return (milhasNum / 1000) * valorMilheiroNum + taxasNum;
+                    });
+                    const mediaCia = valoresCia.reduce((a, b) => a + b, 0) / valoresCia.length;
+
+                    htmlComp += `
+                        <div class="stat-card">
+                            <h3>${cia}</h3>
+                            <div class="value" style="font-size: 1.5em;">R$ ${mediaCia.toFixed(2).replace('.', ',')}</div>
+                            <p style="color: #b0b0b0; font-size: 0.9em; margin-top: 10px;">${dados.length} alertas</p>
+                        </div>
+                    `;
+                }
+            });
+
+            htmlComp += '</div>';
+            document.getElementById('performanceCompanhias').innerHTML = htmlComp;
+
+            // Top 5 Rotas
+            const rotasValor = {};
+            dadosComValor.forEach(d => {
+                const milhasNum = parseFloat(d.milhas.replace(/[^\d]/g, ''));
+                const valorMilheiroNum = parseFloat(d.valorMilheiro.replace(/[^\d,]/g, '').replace(',', '.'));
+                const taxasNum = d.taxas ? parseFloat(d.taxas.replace(/[^\d,]/g, '').replace(',', '.')) : 0;
+                const valor = (milhasNum / 1000) * valorMilheiroNum + taxasNum;
+
+                if (!rotasValor[d.itinerario]) {
+                    rotasValor[d.itinerario] = { total: 0, count: 0 };
+                }
+                rotasValor[d.itinerario].total += valor;
+                rotasValor[d.itinerario].count++;
+            });
+
+            const topRotas = Object.entries(rotasValor)
+                .map(([rota, data]) => ({ rota, media: data.total / data.count, count: data.count }))
+                .sort((a, b) => b.media - a.media)
+                .slice(0, 5);
+
+            let htmlRotas = '';
+            topRotas.forEach(item => {
+                htmlRotas += `
+                    <div class="distribuicao-box">
+                        <span>${item.rota}</span>
+                        <span style="color: #d4af37;">R$ ${item.media.toFixed(2).replace('.', ',')}</span>
+                        <span>${item.count} alertas</span>
+                    </div>
+                `;
+            });
+            document.getElementById('topRotas').innerHTML = htmlRotas || '<p style="color: #b0b0b0;">Nenhuma rota cadastrada ainda</p>';
+
+            // Distribuição por Região
             const regioes = ['Norte', 'Nordeste', 'Centro-Oeste', 'Sudeste', 'Sul'];
-            let html = '';
-            
+            let htmlReg = '';
+
             regioes.forEach(regiao => {
                 const count = agendamentos.filter(a => a.regiao === regiao).length;
                 const percent = agendamentos.length > 0 ? (count / agendamentos.length * 100).toFixed(1) : 0;
-                html += `
+                htmlReg += `
                     <div class="distribuicao-box">
                         <span>${regiao}</span>
                         <span>${count}</span>
@@ -937,8 +1060,38 @@
                     </div>
                 `;
             });
-            
-            document.getElementById('distribuicaoRegioes').innerHTML = html;
+
+            document.getElementById('distribuicaoRegioes').innerHTML = htmlReg;
+
+            // Últimos 7 dias
+            const ultimos7 = [];
+            const dataHoje = new Date();
+
+            for (let i = 6; i >= 0; i--) {
+                const data = new Date(dataHoje);
+                data.setDate(dataHoje.getDate() - i);
+                const dataStr = data.toLocaleDateString('pt-BR');
+
+                const cadastrosNoDia = todosDados.filter(d => d.data_cadastro === dataStr).length;
+
+                ultimos7.push({ data: dataStr, count: cadastrosNoDia });
+            }
+
+            let html7Dias = '';
+            ultimos7.forEach(item => {
+                const larguraBarra = ultimos7.length > 0 ? (item.count / Math.max(...ultimos7.map(x => x.count), 1) * 100) : 0;
+
+                html7Dias += `
+                    <div class="distribuicao-box" style="position: relative; overflow: hidden;">
+                        <div style="position: absolute; left: 0; top: 0; bottom: 0; width: ${larguraBarra}%; background: rgba(212, 175, 55, 0.15); z-index: 0;"></div>
+                        <span style="position: relative; z-index: 1;">${item.data}</span>
+                        <span style="position: relative; z-index: 1;">${item.count}</span>
+                        <span style="position: relative; z-index: 1;">alertas</span>
+                    </div>
+                `;
+            });
+
+            document.getElementById('ultimos7Dias').innerHTML = html7Dias;
         }
         
         function renderizarDisponibilidade() {
@@ -1660,19 +1813,27 @@
         // ===== EXPORTAR PARA REDES SOCIAIS =====
 
         function gerarPostRedeSocial(agendamento) {
-            const milhas = agendamento.milhas || 'N/A';
-            const taxas = agendamento.taxas || 'N/A';
             const itinerario = agendamento.itinerario;
             const companhia = agendamento.companhia || '';
 
-            const post = `*** ALERTA DE MILHAS ***
+            // Calcular valor em REAL (não mostrar milhas)
+            let valorReal = 'Consultar';
+            if (agendamento.milhas && agendamento.valorMilheiro) {
+                const milhasNum = parseFloat(agendamento.milhas.replace(/[^\d]/g, ''));
+                const valorMilheiroNum = parseFloat(agendamento.valorMilheiro.replace(/[^\d,]/g, '').replace(',', '.'));
+                const taxasNum = agendamento.taxas ? parseFloat(agendamento.taxas.replace(/[^\d,]/g, '').replace(',', '.')) : 0;
+                const custoMilhas = (milhasNum / 1000) * valorMilheiroNum;
+                const total = custoMilhas + taxasNum;
+                valorReal = 'R$ ' + total.toFixed(2).replace('.', ',');
+            }
 
-${itinerario}
-Milhas: ${milhas}
-Taxas: ${taxas}
-${companhia ? 'Companhia: ' + companhia : ''}
+            const post = `🔥 ALERTA DE PASSAGEM 🔥
 
-Aproveite enquanto dura!
+✈️ ${itinerario}
+💰 ${valorReal}
+${companhia ? '🏢 ' + companhia : ''}
+
+⚠️ Poucas tarifas disponíveis!
 
 ${agendamento.link || ''}`;
 
