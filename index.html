@@ -595,8 +595,14 @@
                         <input type="text" id="observacoes" placeholder="Ex: Melhor preço do mês, expira rápido...">
                     </div>
                     <div class="form-group">
-                        <label>Datas Disponíveis (Cole as datas dos voos)</label>
-                        <textarea id="datasDisponiveis" rows="4" placeholder="Ex: Mar: 16, 17, 18, 19, 20&#10;Abr: 01, 02, 03, 04, 05&#10;Mai: 10, 11, 12"></textarea>
+                        <label>Datas de IDA</label>
+                        <textarea id="datasIda" rows="6" placeholder="Fev: 21, 22, 24, 25, 26&#10;Mar: 14, 18, 26, 31&#10;Abr: 19&#10;Mai: 08, 17"></textarea>
+                        <small style="color: #888; display: block; margin-top: 5px;">Cole as datas de ida por mês. Formato: Mês: dia, dia, dia</small>
+                    </div>
+                    <div class="form-group">
+                        <label>Datas de VOLTA</label>
+                        <textarea id="datasVolta" rows="6" placeholder="Fev: 22, 23, 25, 26, 28&#10;Mar: 02, 09, 26, 31&#10;Abr: 07, 10, 23&#10;Mai: 08, 15, 22, 23, 28"></textarea>
+                        <small style="color: #888; display: block; margin-top: 5px;">Cole as datas de volta por mês. Formato: Mês: dia, dia, dia</small>
                     </div>
                     <div class="form-group">
                         <label>Preço Médio de Mercado (R$)</label>
@@ -837,7 +843,8 @@
             const valorMilheiro = document.getElementById('valorMilheiro').value;
             const taxas = document.getElementById('taxas').value;
             const observacoes = document.getElementById('observacoes').value;
-            const datasDisponiveis = document.getElementById('datasDisponiveis').value;
+            const datasIda = document.getElementById('datasIda').value;
+            const datasVolta = document.getElementById('datasVolta').value;
             const precoMedio = document.getElementById('precoMedio').value;
             const urlLandingPage = document.getElementById('urlLandingPage').value;
 
@@ -865,7 +872,8 @@
                     valorMilheiro: valorMilheiro,
                     taxas: taxas,
                     observacoes: observacoes,
-                    datasDisponiveis: datasDisponiveis,
+                    datasIda: datasIda,
+                    datasVolta: datasVolta,
                     precoMedio: precoMedio,
                     urlLandingPage: urlLandingPage,
                     data_cadastro: agendamentoOriginal.data_cadastro,
@@ -897,7 +905,8 @@
                     valorMilheiro: valorMilheiro,
                     taxas: taxas,
                     observacoes: observacoes,
-                    datasDisponiveis: datasDisponiveis,
+                    datasIda: datasIda,
+                    datasVolta: datasVolta,
                     precoMedio: precoMedio,
                     urlLandingPage: urlLandingPage,
                     data_cadastro: dataCadastro,
@@ -931,7 +940,8 @@
             document.getElementById('valorMilheiro').value = ag.valorMilheiro || '';
             document.getElementById('taxas').value = ag.taxas || '';
             document.getElementById('observacoes').value = ag.observacoes || '';
-            document.getElementById('datasDisponiveis').value = ag.datasDisponiveis || '';
+            document.getElementById('datasIda').value = ag.datasIda || ag.datasDisponiveis || '';
+            document.getElementById('datasVolta').value = ag.datasVolta || '';
             document.getElementById('precoMedio').value = ag.precoMedio || '';
             document.getElementById('urlLandingPage').value = ag.urlLandingPage || 'https://voecomkennedy.github.io/EMISSAO/';
 
@@ -1718,23 +1728,22 @@
             const companhia = document.getElementById('companhia').value;
             const urlBase = document.getElementById('urlLandingPage').value || 'https://voecomkennedy.github.io/EMISSAO/';
 
-            // Extrair origem e destino do itinerário (ex: "GRU-SDU" ou "São Paulo-Rio")
+            // Extrair origem e destino do itinerário (ex: "São Paulo-Belo Horizonte")
             const partes = itinerario.split('-');
             if (partes.length < 2) {
-                return urlBase;
+                return { url: urlBase, ref: '' };
             }
 
             const origem = encodeURIComponent(partes[0].trim());
             const destino = encodeURIComponent(partes[1].trim());
             const cia = encodeURIComponent(companhia || '');
 
-            // Pegar valores
+            // Pegar valores - SEM pontos/vírgulas (só os centavos)
             const milhasInput = document.getElementById('milhas').value;
             const valorMilheiroInput = document.getElementById('valorMilheiro').value;
             const taxasInput = document.getElementById('taxas').value;
 
             let valorPix = '';
-            let valorCartao = '';
 
             if (milhasInput && valorMilheiroInput) {
                 const milhasNum = parseFloat(milhasInput.replace(/[^\d]/g, ''));
@@ -1742,44 +1751,106 @@
                 const custoMilhas = (milhasNum / 1000) * valorMilheiroNum;
                 const taxasNum = taxasInput ? parseFloat(taxasInput.replace(/[^\d,]/g, '').replace(',', '.')) : 0;
                 const custoTotalPix = custoMilhas + (isNaN(taxasNum) ? 0 : taxasNum);
-                const custoTotalCartao = custoTotalPix * 1.088;
 
-                valorPix = custoTotalPix.toFixed(2);
-                valorCartao = custoTotalCartao.toFixed(2);
+                // Valor em centavos (sem ponto/vírgula)
+                valorPix = Math.round(custoTotalPix * 100).toString();
             }
 
-            // Montar URL com parâmetros: o=origem, d=destino, c=companhia, v=valorPix, i=valorCartao
+            // Pegar datas de IDA e VOLTA
+            const datasIdaTexto = document.getElementById('datasIda').value;
+            const datasVoltaTexto = document.getElementById('datasVolta').value;
+
+            const datasIda = converterDatasParaParametros(datasIdaTexto);
+            const datasVolta = converterDatasParaParametros(datasVoltaTexto);
+
+            // Gerar ref (código simplificado do itinerário-companhia-valor)
+            // Ex: SAO-BHZ-GOL-299
+            // Normalizar caracteres especiais primeiro (São Paulo → Sao Paulo)
+            const normalizarTexto = (texto) => {
+                return texto.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+            };
+
+            const origemNorm = normalizarTexto(partes[0].trim());
+            const destinoNorm = normalizarTexto(partes[1].trim());
+
+            const origemCodigo = origemNorm.substring(0, 3).toUpperCase().replace(/[^A-Z]/g, '');
+            const destinoCodigo = destinoNorm.substring(0, 3).toUpperCase().replace(/[^A-Z]/g, '');
+            const valorRef = valorPix ? Math.round(parseInt(valorPix) / 100).toString() : '';
+            const ref = `${origemCodigo}-${destinoCodigo}-${companhia.toUpperCase()}-${valorRef}`;
+
+            // Montar URL com parâmetros: o, d, c, v, i, r, ref
             let url = urlBase + '?';
             const params = [];
             if (origem) params.push(`o=${origem}`);
             if (destino) params.push(`d=${destino}`);
             if (cia) params.push(`c=${cia}`);
             if (valorPix) params.push(`v=${valorPix}`);
-            if (valorCartao) params.push(`i=${valorCartao}`);
+            if (datasIda) params.push(`i=${datasIda}`);
+            if (datasVolta) params.push(`r=${datasVolta}`);
+            if (ref) params.push(`ref=${ref}`);
 
             url += params.join('&');
-            return url;
+            return { url, ref };
         }
 
         function formatarDatasParaPost(datasTexto) {
+            // Formato EXATO do modelo: manter por mês com separadores
+            // Entrada: "Fev: 21, 22, 24, 25, 26\nMar: 14, 18, 26, 31"
+            // Saída: "Fev: 21, 22, 24, 25, 26\n----------------\nMar: 14, 18, 26, 31\n----------------"
+
             if (!datasTexto || datasTexto.trim() === '') {
                 return '';
             }
 
-            // Entrada esperada: "Mar: 16, 17, 18\nAbr: 01, 02, 03"
-            // Saída: formatado com emojis por mês
             const linhas = datasTexto.split('\n').filter(l => l.trim() !== '');
-            const datasFormatadas = linhas.map(linha => {
-                const partes = linha.split(':');
-                if (partes.length === 2) {
-                    const mes = partes[0].trim();
-                    const dias = partes[1].trim();
-                    return `📅 ${mes}: ${dias}`;
-                }
-                return linha;
+            const linhasFormatadas = [];
+
+            linhas.forEach(linha => {
+                linhasFormatadas.push(linha.trim());
+                linhasFormatadas.push('----------------');
             });
 
-            return '\n\n🗓️ DATAS DISPONÍVEIS:\n' + datasFormatadas.join('\n');
+            return linhasFormatadas.join('\n');
+        }
+
+        function converterDatasParaParametros(datasTexto) {
+            // Converter datas para formato AAMMDD separadas por pipe
+            // Entrada: "Fev: 21, 22, 24, 25, 26\nMar: 14, 18, 26, 31"
+            // Saída: "260221|260222|260224|260225|260226|260314|260318|260326|260331"
+
+            if (!datasTexto || datasTexto.trim() === '') {
+                return '';
+            }
+
+            const mesesNum = {
+                'jan': '01', 'fev': '02', 'mar': '03', 'abr': '04',
+                'mai': '05', 'jun': '06', 'jul': '07', 'ago': '08',
+                'set': '09', 'out': '10', 'nov': '11', 'dez': '12'
+            };
+
+            // Ano atual (assumindo 2026)
+            const ano = '26';
+            const linhas = datasTexto.split('\n').filter(l => l.trim() !== '');
+            const datasFormatadas = [];
+
+            linhas.forEach(linha => {
+                const partes = linha.split(':');
+                if (partes.length === 2) {
+                    const mes = partes[0].trim().toLowerCase().substring(0, 3);
+                    const mesNum = mesesNum[mes];
+
+                    if (mesNum) {
+                        const dias = partes[1].split(',').map(d => d.trim()).filter(d => d !== '');
+
+                        dias.forEach(dia => {
+                            const diaFormatado = dia.padStart(2, '0');
+                            datasFormatadas.push(`${ano}${mesNum}${diaFormatado}`);
+                        });
+                    }
+                }
+            });
+
+            return datasFormatadas.join('|');
         }
 
         function gerarPostCompleto() {
@@ -1811,39 +1882,74 @@
             const parcelaCartao = custoTotalCartao / 5;
 
             const valorPixFormatado = `R$ ${custoTotalPix.toFixed(2).replace('.', ',')}`;
-            const valorCartaoFormatado = `R$ ${custoTotalCartao.toFixed(2).replace('.', ',')}`;
             const parcelaFormatada = `R$ ${parcelaCartao.toFixed(2).replace('.', ',')}`;
 
             // Pegar preço médio
             const precoMedioInput = document.getElementById('precoMedio').value;
+            let precoMedioTexto = '';
             let economiaTexto = '';
             if (precoMedioInput) {
                 const precoMedioNum = parseFloat(precoMedioInput.replace(/[^\d,]/g, '').replace(',', '.'));
+                const precoMedioFormatado = `R$ ${precoMedioNum.toFixed(2).replace('.', ',')}`;
+                precoMedioTexto = `\n❌ Preço médio: ${precoMedioFormatado}`;
+
                 const economia = precoMedioNum - custoTotalPix;
                 if (economia > 0) {
-                    economiaTexto = `\n💰 ECONOMIA: R$ ${economia.toFixed(2).replace('.', ',')} em relação ao preço médio de mercado!`;
+                    const economiaFormatada = `R$ ${economia.toFixed(2).replace('.', ',')}`;
+                    economiaTexto = `\n🤑 *ECONOMIA VoeComKennedy: ${economiaFormatada}*`;
                 }
             }
 
-            // Formatar datas
-            const datasTexto = document.getElementById('datasDisponiveis').value;
-            const datasFormatadas = formatarDatasParaPost(datasTexto);
+            // Formatar datas IDA e VOLTA
+            const datasIdaTexto = document.getElementById('datasIda').value;
+            const datasVoltaTexto = document.getElementById('datasVolta').value;
 
-            // Gerar link da landing page
-            const linkCompleto = gerarLinkLandingPage();
+            let datasFormatadas = '';
 
-            // Montar o post completo
-            const post = `🔥 ALERTA DE PASSAGEM 🔥
+            if (datasIdaTexto || datasVoltaTexto) {
+                datasFormatadas = '\n';
 
-✈️ ${itinerario}
-💵 PIX: ${valorPixFormatado}
-💳 CARTÃO: ${valorCartaoFormatado} (5x de ${parcelaFormatada})${companhia ? '\n🏢 ' + companhia : ''}${economiaTexto}${datasFormatadas}
+                if (datasIdaTexto && datasIdaTexto.trim() !== '') {
+                    const datasIdaFormatadas = formatarDatasParaPost(datasIdaTexto);
+                    datasFormatadas += `\n📅 *IDA:*\n\n${datasIdaFormatadas}\n`;
+                }
 
-⚠️ Poucas tarifas disponíveis!
+                if (datasVoltaTexto && datasVoltaTexto.trim() !== '') {
+                    const datasVoltaFormatadas = formatarDatasParaPost(datasVoltaTexto);
+                    datasFormatadas += `\n📅 *VOLTA:*\n${datasVoltaFormatadas}`;
+                }
+            }
 
-🔗 Reserve agora: ${linkCompleto}
+            // Gerar links
+            const linkData = gerarLinkLandingPage();
+            const linkEmissao = linkData.url;
+            const ref = linkData.ref;
+            const linkCotacao = 'https://voecomkennedy.github.io/COTACAO/';
 
-#VoeComKennedy #Milhas #PassagensAéreas #Viagem`;
+            // Formatar itinerário (MAIÚSCULAS com seta ⇄)
+            const itinerarioFormatado = itinerario.toUpperCase().replace(/-/g, ' ⇄ ');
+
+            // Montar o post completo EXATAMENTE como o modelo
+            const post = `✈️ ${itinerarioFormatado}
+
+🏢 Companhia: ${companhia || 'N/A'}
+
+💰 *${valorPixFormatado}* (IDA E VOLTA via Pix)
+💳 5x de ${parcelaFormatada} (no cartão, com acréscimo)
+${precoMedioTexto}${economiaTexto}${datasFormatadas}
+
+✅ Taxas de embarque já inclusas.
+⚠️ Tarifas dinâmicas, sujeitas a alteração.
+
+👇 DESEJA EMITIR?
+${linkEmissao}
+---
+#VoeComKennedy #AlertaExclusivo
+---
+🌍 QUER OUTRA DATA OU DESTINO?
+Não achou o que procurava? A gente cota qualquer viagem para você aqui:
+👉 ${linkCotacao}
+---`;
 
             // Copiar para clipboard
             navigator.clipboard.writeText(post).then(() => {
@@ -1856,7 +1962,7 @@
             });
 
             // Salvar o link no campo de link
-            document.getElementById('link').value = linkCompleto;
+            document.getElementById('link').value = linkEmissao;
         }
 
         // Event listeners para calcular em tempo real
