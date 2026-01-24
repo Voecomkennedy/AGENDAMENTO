@@ -1724,73 +1724,104 @@
         }
 
         function gerarLinkLandingPage() {
-            const itinerario = document.getElementById('itinerario').value;
-            const companhia = document.getElementById('companhia').value;
-            const urlBase = document.getElementById('urlLandingPage').value || 'https://voecomkennedy.github.io/EMISSAO/';
+            try {
+                const urlBase = document.getElementById('urlLandingPage').value || 'https://voecomkennedy.github.io/EMISSAO/';
 
-            // Extrair origem e destino do itinerário (ex: "São Paulo-Belo Horizonte")
-            const partes = itinerario.split('-');
-            if (partes.length < 2) {
-                return { url: urlBase, ref: '' };
+                // Dicionário de códigos IATA (conforme explicado pelo Gemini)
+                const iataMap = {
+                    "São Paulo": "SAO", "Rio de Janeiro": "RIO", "Belo Horizonte": "BHZ",
+                    "Brasília": "BSB", "Salvador": "SSA", "Fortaleza": "FOR",
+                    "Curitiba": "CWB", "Florianópolis": "FLN", "Porto Alegre": "POA",
+                    "Recife": "REC", "Goiânia": "GYN", "Vitória": "VIX",
+                    "Manaus": "MAO", "Belém": "BEL", "Natal": "NAT",
+                    "Maceió": "MCZ", "João Pessoa": "JPA", "Aracaju": "AJU",
+                    "Teresina": "THE", "São Luís": "SLZ", "Palmas": "PMW",
+                    "Campo Grande": "CGR", "Cuiabá": "CGB", "Porto Velho": "PVH",
+                    "Rio Branco": "RBR", "Boa Vista": "BVB", "Macapá": "MCP"
+                };
+
+                // Função para limpar texto (remove acentos) - conforme Gemini
+                const cleanText = (text) => {
+                    return text.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+                };
+
+                // Pegar dados do formulário
+                const itinerario = document.getElementById('itinerario').value;
+                const companhia = document.getElementById('companhia').value;
+
+                // Extrair origem e destino
+                const partes = itinerario.split('-');
+                if (partes.length < 2) {
+                    return { url: urlBase, ref: '' };
+                }
+
+                const origemOriginal = partes[0].trim();
+                const destinoOriginal = partes[1].trim();
+
+                // Limpar texto e fazer encoding
+                const origemClean = cleanText(origemOriginal);
+                const destinoClean = cleanText(destinoOriginal);
+
+                const p_origem = encodeURIComponent(origemClean);
+                const p_destino = encodeURIComponent(destinoClean);
+                const p_cia = companhia.toUpperCase();
+
+                // Calcular valor em CENTAVOS (remove tudo que não é número) - conforme Gemini
+                const milhasInput = document.getElementById('milhas').value;
+                const valorMilheiroInput = document.getElementById('valorMilheiro').value;
+                const taxasInput = document.getElementById('taxas').value;
+
+                let p_valor = '';
+                let valorParaRef = 0;
+
+                if (milhasInput && valorMilheiroInput) {
+                    const milhasNum = parseFloat(milhasInput.replace(/[^\d]/g, ''));
+                    const valorMilheiroNum = parseFloat(valorMilheiroInput.replace(/[^\d,]/g, '').replace(',', '.'));
+                    const custoMilhas = (milhasNum / 1000) * valorMilheiroNum;
+                    const taxasNum = taxasInput ? parseFloat(taxasInput.replace(/[^\d,]/g, '').replace(',', '.')) : 0;
+                    const custoTotalPix = custoMilhas + (isNaN(taxasNum) ? 0 : taxasNum);
+
+                    // Valor em centavos (conforme Gemini: remove TUDO que não é número)
+                    p_valor = custoTotalPix.toFixed(2).replace('.', '').replace(',', '');
+
+                    // Para ref: preço INTEIRO (sem centavos) - conforme Gemini
+                    valorParaRef = Math.floor(custoTotalPix);
+                }
+
+                // Pegar datas de IDA e VOLTA e converter para formato AAMMDD|AAMMDD
+                const datasIdaTexto = document.getElementById('datasIda').value;
+                const datasVoltaTexto = document.getElementById('datasVolta').value;
+
+                const p_idas = converterDatasParaParametros(datasIdaTexto);
+                const p_voltas = converterDatasParaParametros(datasVoltaTexto);
+
+                // Gerar REF usando códigos IATA ou fallback para 3 primeiras letras - conforme Gemini
+                const siglaOrigem = iataMap[origemOriginal] || cleanText(origemOriginal).substring(0, 3).toUpperCase();
+                const siglaDestino = iataMap[destinoOriginal] || cleanText(destinoOriginal).substring(0, 3).toUpperCase();
+
+                const p_ref = `${siglaOrigem}-${siglaDestino}-${p_cia}-${valorParaRef}`;
+
+                // Montar URL final - conforme Gemini
+                let url = urlBase + '?';
+                const params = [];
+                if (p_origem) params.push(`o=${p_origem}`);
+                if (p_destino) params.push(`d=${p_destino}`);
+                if (p_cia) params.push(`c=${p_cia}`);
+                if (p_valor) params.push(`v=${p_valor}`);
+                if (p_idas) params.push(`i=${p_idas}`);
+                if (p_voltas) params.push(`r=${p_voltas}`);
+                if (p_ref) params.push(`ref=${p_ref}`);
+
+                url += params.join('&');
+                return { url, ref: p_ref };
+
+            } catch (erro) {
+                console.error('Erro ao gerar link:', erro);
+                return {
+                    url: 'https://voecomkennedy.github.io/EMISSAO/',
+                    ref: 'ERRO'
+                };
             }
-
-            const origem = encodeURIComponent(partes[0].trim());
-            const destino = encodeURIComponent(partes[1].trim());
-            const cia = encodeURIComponent(companhia || '');
-
-            // Pegar valores - SEM pontos/vírgulas (só os centavos)
-            const milhasInput = document.getElementById('milhas').value;
-            const valorMilheiroInput = document.getElementById('valorMilheiro').value;
-            const taxasInput = document.getElementById('taxas').value;
-
-            let valorPix = '';
-
-            if (milhasInput && valorMilheiroInput) {
-                const milhasNum = parseFloat(milhasInput.replace(/[^\d]/g, ''));
-                const valorMilheiroNum = parseFloat(valorMilheiroInput.replace(/[^\d,]/g, '').replace(',', '.'));
-                const custoMilhas = (milhasNum / 1000) * valorMilheiroNum;
-                const taxasNum = taxasInput ? parseFloat(taxasInput.replace(/[^\d,]/g, '').replace(',', '.')) : 0;
-                const custoTotalPix = custoMilhas + (isNaN(taxasNum) ? 0 : taxasNum);
-
-                // Valor em centavos (sem ponto/vírgula)
-                valorPix = Math.round(custoTotalPix * 100).toString();
-            }
-
-            // Pegar datas de IDA e VOLTA
-            const datasIdaTexto = document.getElementById('datasIda').value;
-            const datasVoltaTexto = document.getElementById('datasVolta').value;
-
-            const datasIda = converterDatasParaParametros(datasIdaTexto);
-            const datasVolta = converterDatasParaParametros(datasVoltaTexto);
-
-            // Gerar ref (código simplificado do itinerário-companhia-valor)
-            // Ex: SAO-BHZ-GOL-299
-            // Normalizar caracteres especiais primeiro (São Paulo → Sao Paulo)
-            const normalizarTexto = (texto) => {
-                return texto.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-            };
-
-            const origemNorm = normalizarTexto(partes[0].trim());
-            const destinoNorm = normalizarTexto(partes[1].trim());
-
-            const origemCodigo = origemNorm.substring(0, 3).toUpperCase().replace(/[^A-Z]/g, '');
-            const destinoCodigo = destinoNorm.substring(0, 3).toUpperCase().replace(/[^A-Z]/g, '');
-            const valorRef = valorPix ? Math.round(parseInt(valorPix) / 100).toString() : '';
-            const ref = `${origemCodigo}-${destinoCodigo}-${companhia.toUpperCase()}-${valorRef}`;
-
-            // Montar URL com parâmetros: o, d, c, v, i, r, ref
-            let url = urlBase + '?';
-            const params = [];
-            if (origem) params.push(`o=${origem}`);
-            if (destino) params.push(`d=${destino}`);
-            if (cia) params.push(`c=${cia}`);
-            if (valorPix) params.push(`v=${valorPix}`);
-            if (datasIda) params.push(`i=${datasIda}`);
-            if (datasVolta) params.push(`r=${datasVolta}`);
-            if (ref) params.push(`ref=${ref}`);
-
-            url += params.join('&');
-            return { url, ref };
         }
 
         function formatarDatasParaPost(datasTexto) {
@@ -1819,8 +1850,11 @@
             // Saída: "260221|260222|260224|260225|260226|260314|260318|260326|260331"
 
             if (!datasTexto || datasTexto.trim() === '') {
+                console.log('⚠️ Datas vazias');
                 return '';
             }
+
+            console.log('📅 Texto de entrada:', datasTexto);
 
             const mesesNum = {
                 'jan': '01', 'fev': '02', 'mar': '03', 'abr': '04',
@@ -1833,24 +1867,34 @@
             const linhas = datasTexto.split('\n').filter(l => l.trim() !== '');
             const datasFormatadas = [];
 
+            console.log('📝 Linhas encontradas:', linhas);
+
             linhas.forEach(linha => {
                 const partes = linha.split(':');
                 if (partes.length === 2) {
                     const mes = partes[0].trim().toLowerCase().substring(0, 3);
                     const mesNum = mesesNum[mes];
 
+                    console.log(`🔍 Processando: "${linha}" → Mês: "${mes}" → Código: ${mesNum}`);
+
                     if (mesNum) {
                         const dias = partes[1].split(',').map(d => d.trim()).filter(d => d !== '');
 
                         dias.forEach(dia => {
                             const diaFormatado = dia.padStart(2, '0');
-                            datasFormatadas.push(`${ano}${mesNum}${diaFormatado}`);
+                            const dataCompleta = `${ano}${mesNum}${diaFormatado}`;
+                            datasFormatadas.push(dataCompleta);
+                            console.log(`  ✅ Data: ${dia} → ${dataCompleta}`);
                         });
+                    } else {
+                        console.log(`  ❌ Mês não reconhecido: "${mes}"`);
                     }
                 }
             });
 
-            return datasFormatadas.join('|');
+            const resultado = datasFormatadas.join('|');
+            console.log('🎯 Resultado final:', resultado);
+            return resultado;
         }
 
         function gerarPostCompleto() {
