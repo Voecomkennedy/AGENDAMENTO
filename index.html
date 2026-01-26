@@ -465,7 +465,6 @@
         <div class="tabs">
             <button class="tab active" onclick="showTab('dashboard')">Dashboard</button>
             <button class="tab" onclick="showTab('cadastro')">Cadastrar</button>
-            <button class="tab" onclick="showTab('disponibilidade')">Disponibilidade</button>
             <button class="tab" onclick="showTab('agendamentos')">Agendamentos</button>
             <button class="tab" onclick="showTab('historico')">Histórico</button>
             <button class="tab" onclick="showTab('cotacoes')">Cotações</button>
@@ -534,12 +533,26 @@
                 <input type="hidden" id="editandoIndex" value="">
                 <div class="form-grid">
                     <div class="form-group">
-                        <label>Data</label>
+                        <label>Data de Início</label>
                         <input type="date" id="data" required>
                     </div>
                     <div class="form-group">
+                        <label>Região</label>
+                        <select id="regiao" required onchange="atualizarHorariosDisponiveis()">
+                            <option value="">Selecione a região primeiro...</option>
+                            <option value="Norte">Norte</option>
+                            <option value="Nordeste">Nordeste</option>
+                            <option value="Centro-Oeste">Centro-Oeste</option>
+                            <option value="Sudeste">Sudeste</option>
+                            <option value="Sul">Sul</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
                         <label>Horário</label>
-                        <input type="time" id="horario" required>
+                        <select id="horario" required>
+                            <option value="">Selecione a região primeiro</option>
+                        </select>
+                        <small style="color: #888; display: block; margin-top: 5px;">Apenas horários disponíveis são mostrados</small>
                     </div>
                     <div class="form-group">
                         <label>Itinerário</label>
@@ -555,23 +568,28 @@
                         </select>
                     </div>
                     <div class="form-group">
-                        <label>Região</label>
-                        <select id="regiao" required>
-                            <option value="">Selecione...</option>
-                            <option value="Norte">Norte</option>
-                            <option value="Nordeste">Nordeste</option>
-                            <option value="Centro-Oeste">Centro-Oeste</option>
-                            <option value="Sudeste">Sudeste</option>
-                            <option value="Sul">Sul</option>
+                        <label>Frequência</label>
+                        <select id="recorrencia" required onchange="toggleFrequenciaPersonalizada()">
+                            <option value="Diário">Diário (todo dia)</option>
+                            <option value="Personalizado">Personalizado (a cada X dias)</option>
+                            <option value="Uma Vez">Uma Vez (não repete)</option>
+                        </select>
+                    </div>
+                    <div class="form-group" id="campoFrequenciaPersonalizada" style="display: none;">
+                        <label>A cada quantos dias?</label>
+                        <select id="diasIntervalo">
+                            <option value="2">A cada 2 dias</option>
+                            <option value="3">A cada 3 dias</option>
+                            <option value="4">A cada 4 dias</option>
+                            <option value="5">A cada 5 dias</option>
+                            <option value="6">A cada 6 dias</option>
+                            <option value="7">A cada 7 dias (semanal)</option>
                         </select>
                     </div>
                     <div class="form-group">
-                        <label>Recorrência</label>
-                        <select id="recorrencia" required>
-                            <option value="Diário">Diário (todo dia)</option>
-                            <option value="Dias Alternados">Dias Alternados</option>
-                            <option value="Uma Vez">Uma Vez</option>
-                        </select>
+                        <label>Data de Término (quando parar de postar)</label>
+                        <input type="date" id="dataTermino">
+                        <small style="color: #888; display: block; margin-top: 5px;">Deixe em branco para não ter data fim</small>
                     </div>
                     <div class="form-group">
                         <label>Link da Companhia Aérea (link original da promoção)</label>
@@ -1183,6 +1201,57 @@
             }
         }
         
+        function toggleFrequenciaPersonalizada() {
+            const recorrencia = document.getElementById('recorrencia').value;
+            const campoPersonalizado = document.getElementById('campoFrequenciaPersonalizada');
+
+            if (recorrencia === 'Personalizado') {
+                campoPersonalizado.style.display = 'block';
+            } else {
+                campoPersonalizado.style.display = 'none';
+            }
+        }
+
+        function atualizarHorariosDisponiveis() {
+            const regiao = document.getElementById('regiao').value;
+            const selectHorario = document.getElementById('horario');
+
+            if (!regiao) {
+                selectHorario.innerHTML = '<option value="">Selecione a região primeiro</option>';
+                return;
+            }
+
+            // Gerar todos os horários possíveis (das 08:00 às 21:00 de 30 em 30 min)
+            const todosHorarios = [];
+            for (let h = 8; h <= 21; h++) {
+                todosHorarios.push(`${String(h).padStart(2, '0')}:00`);
+                if (h < 21) {
+                    todosHorarios.push(`${String(h).padStart(2, '0')}:30`);
+                }
+            }
+
+            // Verificar quais horários já estão ocupados nessa região
+            const horariosOcupados = agendamentos
+                .filter(ag => ag.regiao === regiao)
+                .map(ag => ag.horario);
+
+            // Filtrar apenas horários disponíveis
+            const horariosDisponiveis = todosHorarios.filter(h => !horariosOcupados.includes(h));
+
+            // Preencher o select
+            if (horariosDisponiveis.length === 0) {
+                selectHorario.innerHTML = '<option value="">Nenhum horário disponível nesta região</option>';
+            } else {
+                selectHorario.innerHTML = '<option value="">Selecione um horário...</option>';
+                horariosDisponiveis.forEach(horario => {
+                    const option = document.createElement('option');
+                    option.value = horario;
+                    option.textContent = horario;
+                    selectHorario.appendChild(option);
+                });
+            }
+        }
+
         function cadastrarAgendamento(e) {
             e.preventDefault();
 
