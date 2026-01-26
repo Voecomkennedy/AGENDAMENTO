@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sistema de Controle de Agendamentos</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.2/jspdf.umd.min.js" integrity="sha512-Bw9Zj8x4giJb3OmlMiMaGbNrFr0ERD2f9jL3en5FmcTXLhkI+fKyXVeyGyxKMIl1RfgcCBDprJJt4JvlglEb3A==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
     <style>
         * {
             margin: 0;
@@ -467,6 +468,7 @@
             <button class="tab" onclick="showTab('disponibilidade')">Disponibilidade</button>
             <button class="tab" onclick="showTab('agendamentos')">Agendamentos</button>
             <button class="tab" onclick="showTab('historico')">Histórico</button>
+            <button class="tab" onclick="showTab('cotacoes')">Cotações</button>
             <button class="tab" onclick="showTab('analises')">Análises</button>
             <button class="tab" onclick="showTab('configuracoes')">Configurações</button>
         </div>
@@ -735,6 +737,325 @@
             <div id="listaHistorico"></div>
         </div>
 
+        <div id="cotacoes" class="tab-content">
+            <h2>Cotações de Viagens</h2>
+
+            <div class="info-text">
+                Crie orçamentos profissionais para seus clientes. Gere PDF ou copie para WhatsApp!
+            </div>
+
+            <form id="formCotacao" style="margin-top: 25px;">
+                <input type="hidden" id="editandoCotacaoIndex" value="">
+
+                <h3>Dados do Cliente</h3>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 15px;">
+                    <div class="form-group">
+                        <label>Nome do Cliente</label>
+                        <input type="text" id="cotacao_nomeCliente" placeholder="Ex: João Silva" required>
+                    </div>
+                </div>
+
+                <h3>Passageiros</h3>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
+                    <div class="form-group">
+                        <label>Adultos (12+ anos)</label>
+                        <select id="cotacao_adultos" onchange="atualizarTotalPassageiros()">
+                            <option value="1">1 adulto</option>
+                            <option value="2">2 adultos</option>
+                            <option value="3">3 adultos</option>
+                            <option value="4">4 adultos</option>
+                            <option value="5">5 adultos</option>
+                            <option value="6">6 adultos</option>
+                            <option value="7">7 adultos</option>
+                            <option value="8">8 adultos</option>
+                            <option value="9">9 adultos</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Crianças (2-11 anos)</label>
+                        <select id="cotacao_criancas" onchange="atualizarTotalPassageiros()">
+                            <option value="0">Nenhuma</option>
+                            <option value="1">1 criança</option>
+                            <option value="2">2 crianças</option>
+                            <option value="3">3 crianças</option>
+                            <option value="4">4 crianças</option>
+                            <option value="5">5 crianças</option>
+                            <option value="6">6 crianças</option>
+                            <option value="7">7 crianças</option>
+                            <option value="8">8 crianças</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Bebês (0-23 meses)</label>
+                        <select id="cotacao_bebes" onchange="atualizarTotalPassageiros()">
+                            <option value="0">Nenhum</option>
+                            <option value="1">1 bebê</option>
+                            <option value="2">2 bebês</option>
+                            <option value="3">3 bebês</option>
+                            <option value="4">4 bebês</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Total de Passageiros</label>
+                        <input type="text" id="cotacao_numPassageiros" value="1 adulto" readonly style="background: #1a2942; color: #d4af37; font-weight: bold;">
+                    </div>
+                </div>
+
+                <h3>Detalhes do Voo</h3>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 15px;">
+                    <div class="form-group">
+                        <label>Origem (Digite código IATA ou cidade)</label>
+                        <input type="text" id="cotacao_origem" placeholder="Ex: GRU ou São Paulo" required onblur="autoCompletarAeroporto('cotacao_origem')">
+                        <small style="color: #888; display: block; margin-top: 3px;">Digite código (GRU, CGH, etc) e tecle fora do campo</small>
+                    </div>
+                    <div class="form-group">
+                        <label>Destino (Digite código IATA ou cidade)</label>
+                        <input type="text" id="cotacao_destino" placeholder="Ex: BCN ou Barcelona" required onblur="autoCompletarAeroporto('cotacao_destino')">
+                        <small style="color: #888; display: block; margin-top: 3px;">Digite código (BCN, LIS, etc) e tecle fora do campo</small>
+                    </div>
+                    <div class="form-group">
+                        <label>Companhia Aérea</label>
+                        <select id="cotacao_companhia" required onchange="atualizarInfoCalculoMilhas()">
+                            <option value="">Selecione...</option>
+                            <option value="LATAM">LATAM</option>
+                            <option value="GOL">GOL (Smiles)</option>
+                            <option value="Azul">Azul</option>
+                            <option value="Outra">Outra</option>
+                        </select>
+                        <small id="infoCalculoMilhas" style="color: #d4af37; display: block; margin-top: 5px; font-weight: bold;"></small>
+                    </div>
+                    <div class="form-group">
+                        <label>Tipo de Tarifa</label>
+                        <select id="cotacao_tipoTarifa" onchange="preencherBagagem()">
+                            <option value="">Selecione...</option>
+                            <option value="Básica">Básica</option>
+                            <option value="Light">Light</option>
+                            <option value="Standard">Standard</option>
+                            <option value="Plus">Plus</option>
+                            <option value="Executiva">Executiva</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Link da Companhia Aérea</label>
+                    <div style="display: flex; gap: 10px;">
+                        <input type="url" id="cotacao_linkCompanhia" placeholder="https://..." style="flex: 1;">
+                        <button type="button" class="btn btn-secondary" onclick="window.open(document.getElementById('cotacao_linkCompanhia').value, '_blank')" style="white-space: nowrap;">Abrir Link</button>
+                    </div>
+                    <small style="color: #888; display: block; margin-top: 5px;">Salve o link para consultar depois</small>
+                </div>
+
+                <div class="form-group">
+                    <label>Tipo de Viagem</label>
+                    <select id="cotacao_tipoViagem" onchange="toggleVolta()">
+                        <option value="ida-volta">Ida e Volta</option>
+                        <option value="somente-ida">Somente Ida</option>
+                    </select>
+                </div>
+
+                <h3>Voo de IDA</h3>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
+                    <div class="form-group">
+                        <label>Data IDA</label>
+                        <input type="date" id="cotacao_dataIda" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Horário Saída</label>
+                        <input type="time" id="cotacao_horaSaidaIda" required onchange="calcularTempoVooIda()">
+                    </div>
+                    <div class="form-group">
+                        <label>Horário Chegada</label>
+                        <input type="time" id="cotacao_horaChegadaIda" required onchange="calcularTempoVooIda()">
+                    </div>
+                    <div class="form-group">
+                        <label>Tempo Total de Voo</label>
+                        <input type="text" id="cotacao_tempoVooIda" placeholder="Ex: 8h 30min" style="background: #1a2942; color: #d4af37; font-weight: bold;">
+                    </div>
+                    <div class="form-group">
+                        <label>Tem Conexão?</label>
+                        <select id="cotacao_conexaoIda" onchange="toggleConexaoIda()">
+                            <option value="nao">Voo Direto</option>
+                            <option value="sim">Sim, tem conexão</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div id="detalhesConexaoIda" style="display: none; margin-top: 10px;">
+                    <div class="form-group">
+                        <label>Quantas Paradas?</label>
+                        <select id="cotacao_numParadasIda" onchange="mostrarParadasIda()">
+                            <option value="1">1 parada</option>
+                            <option value="2">2 paradas</option>
+                            <option value="3">3 paradas</option>
+                        </select>
+                    </div>
+
+                    <div id="parada1Ida" style="margin-top: 10px;">
+                        <h4 style="color: #d4af37; font-size: 0.9em; margin-bottom: 10px;">Parada 1</h4>
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px;">
+                            <div class="form-group">
+                                <label>Cidade</label>
+                                <input type="text" id="cotacao_parada1CidadeIda" placeholder="Ex: Brasília" onblur="autoCompletarAeroporto('cotacao_parada1CidadeIda')">
+                            </div>
+                            <div class="form-group">
+                                <label>Tempo de Espera</label>
+                                <input type="text" id="cotacao_parada1TempoIda" placeholder="Ex: 2h 30min">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="parada2Ida" style="display: none; margin-top: 10px;">
+                        <h4 style="color: #d4af37; font-size: 0.9em; margin-bottom: 10px;">Parada 2</h4>
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px;">
+                            <div class="form-group">
+                                <label>Cidade</label>
+                                <input type="text" id="cotacao_parada2CidadeIda" placeholder="Ex: Miami" onblur="autoCompletarAeroporto('cotacao_parada2CidadeIda')">
+                            </div>
+                            <div class="form-group">
+                                <label>Tempo de Espera</label>
+                                <input type="text" id="cotacao_parada2TempoIda" placeholder="Ex: 1h 45min">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="parada3Ida" style="display: none; margin-top: 10px;">
+                        <h4 style="color: #d4af37; font-size: 0.9em; margin-bottom: 10px;">Parada 3</h4>
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px;">
+                            <div class="form-group">
+                                <label>Cidade</label>
+                                <input type="text" id="cotacao_parada3CidadeIda" placeholder="Ex: Lisboa" onblur="autoCompletarAeroporto('cotacao_parada3CidadeIda')">
+                            </div>
+                            <div class="form-group">
+                                <label>Tempo de Espera</label>
+                                <input type="text" id="cotacao_parada3TempoIda" placeholder="Ex: 3h">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="secaoVolta">
+                    <h3>Voo de VOLTA</h3>
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
+                        <div class="form-group">
+                            <label>Data VOLTA</label>
+                            <input type="date" id="cotacao_dataVolta">
+                    </div>
+                    <div class="form-group">
+                        <label>Horário Saída</label>
+                        <input type="time" id="cotacao_horaSaidaVolta" onchange="calcularTempoVooVolta()">
+                    </div>
+                    <div class="form-group">
+                        <label>Horário Chegada</label>
+                        <input type="time" id="cotacao_horaChegadaVolta" onchange="calcularTempoVooVolta()">
+                    </div>
+                    <div class="form-group">
+                        <label>Tempo Total de Voo</label>
+                        <input type="text" id="cotacao_tempoVooVolta" placeholder="Ex: 8h 30min" style="background: #1a2942; color: #d4af37; font-weight: bold;">
+                    </div>
+                    <div class="form-group">
+                        <label>Tem Conexão?</label>
+                        <select id="cotacao_conexaoVolta" onchange="toggleConexaoVolta()">
+                            <option value="nao">Voo Direto</option>
+                            <option value="sim">Sim, tem conexão</option>
+                        </select>
+                    </div>
+                </div>
+
+                    <div id="detalhesConexaoVolta" style="display: none; margin-top: 10px;">
+                        <div class="form-group">
+                            <label>Quantas Paradas?</label>
+                            <select id="cotacao_numParadasVolta" onchange="mostrarParadasVolta()">
+                                <option value="1">1 parada</option>
+                                <option value="2">2 paradas</option>
+                                <option value="3">3 paradas</option>
+                            </select>
+                        </div>
+
+                        <div id="parada1Volta" style="margin-top: 10px;">
+                            <h4 style="color: #d4af37; font-size: 0.9em; margin-bottom: 10px;">Parada 1</h4>
+                            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px;">
+                                <div class="form-group">
+                                    <label>Cidade</label>
+                                    <input type="text" id="cotacao_parada1CidadeVolta" placeholder="Ex: Brasília" onblur="autoCompletarAeroporto('cotacao_parada1CidadeVolta')">
+                                </div>
+                                <div class="form-group">
+                                    <label>Tempo de Espera</label>
+                                    <input type="text" id="cotacao_parada1TempoVolta" placeholder="Ex: 2h 30min">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div id="parada2Volta" style="display: none; margin-top: 10px;">
+                            <h4 style="color: #d4af37; font-size: 0.9em; margin-bottom: 10px;">Parada 2</h4>
+                            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px;">
+                                <div class="form-group">
+                                    <label>Cidade</label>
+                                    <input type="text" id="cotacao_parada2CidadeVolta" placeholder="Ex: Miami" onblur="autoCompletarAeroporto('cotacao_parada2CidadeVolta')">
+                                </div>
+                                <div class="form-group">
+                                    <label>Tempo de Espera</label>
+                                    <input type="text" id="cotacao_parada2TempoVolta" placeholder="Ex: 1h 45min">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div id="parada3Volta" style="display: none; margin-top: 10px;">
+                            <h4 style="color: #d4af37; font-size: 0.9em; margin-bottom: 10px;">Parada 3</h4>
+                            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px;">
+                                <div class="form-group">
+                                    <label>Cidade</label>
+                                    <input type="text" id="cotacao_parada3CidadeVolta" placeholder="Ex: Lisboa" onblur="autoCompletarAeroporto('cotacao_parada3CidadeVolta')">
+                                </div>
+                                <div class="form-group">
+                                    <label>Tempo de Espera</label>
+                                    <input type="text" id="cotacao_parada3TempoVolta" placeholder="Ex: 3h">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <h3>Cálculo de Valores (Interno - Cliente não vê milhas)</h3>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 15px;">
+                    <div class="form-group">
+                        <label>Quantidade de Milhas</label>
+                        <input type="text" id="cotacao_milhas" placeholder="Ex: 15.000" oninput="calcularCotacao()">
+                    </div>
+                    <div class="form-group">
+                        <label>Valor do Milheiro (R$)</label>
+                        <input type="text" id="cotacao_valorMilheiro" placeholder="Ex: 31,00" oninput="calcularCotacao()">
+                    </div>
+                    <div class="form-group">
+                        <label>Taxas de Embarque (R$)</label>
+                        <input type="text" id="cotacao_taxas" placeholder="Ex: 250,00" oninput="calcularCotacao()">
+                    </div>
+                </div>
+
+                <div class="info-text" style="margin-top: 15px; margin-bottom: 15px;">
+                    <strong>VALOR POR PESSOA:</strong> <span id="cotacao_valorPessoa" style="color: #d4af37; font-size: 1.2em; font-weight: bold;">-</span><br>
+                    <strong>VALOR TOTAL (PIX):</strong> <span id="cotacao_valorTotal" style="color: #d4af37; font-size: 1.2em; font-weight: bold;">-</span><br>
+                    <strong>PARCELA 5x (CARTÃO):</strong> <span id="cotacao_parcela" style="color: #d4af37; font-size: 1.2em; font-weight: bold;">-</span><br>
+                    <strong>TOTAL PARCELADO:</strong> <span id="cotacao_totalParcelado" style="color: #d4af37; font-size: 1.2em; font-weight: bold;">-</span>
+                </div>
+
+                <h3>Bagagem Incluída</h3>
+                <div class="form-group">
+                    <label>Descrição da Franquia de Bagagem</label>
+                    <textarea id="cotacao_bagagem" rows="3" placeholder="Ex: 1 mala de mão (10kg) + 1 bagagem despachada (23kg)"></textarea>
+                </div>
+
+                <div style="display: flex; gap: 10px; margin-top: 25px; flex-wrap: wrap;">
+                    <button type="button" class="btn" onclick="copiarCotacaoWhatsApp()" style="background: #25D366; color: white; flex: 1; min-width: 200px;">Copiar para WhatsApp</button>
+                    <button type="button" class="btn" onclick="gerarPDFCotacao()" style="background: #d32f2f; color: white; flex: 1; min-width: 200px;">Gerar PDF</button>
+                    <button type="button" class="btn btn-primary" onclick="salvarCotacao()" style="flex: 1; min-width: 200px;">Salvar Cotação</button>
+                </div>
+            </form>
+
+            <h3 style="margin-top: 40px;">Histórico de Cotações</h3>
+            <div id="listaCotacoes"></div>
+        </div>
+
         <div id="analises" class="tab-content">
             <h2>Análises e Insights</h2>
 
@@ -794,6 +1115,7 @@
     <script>
         let agendamentos = [];
         let historico = [];
+        let cotacoes = [];
         let cotacaoMilha = 0.015; // Valor padrão
 
         function carregarDados() {
@@ -810,6 +1132,11 @@
                 historico = JSON.parse(historicoSalvo);
             }
 
+            const cotacoesSalvas = localStorage.getItem('cotacoes');
+            if (cotacoesSalvas) {
+                cotacoes = JSON.parse(cotacoesSalvas);
+            }
+
             const cotacaoSalva = localStorage.getItem('cotacaoMilha');
             if (cotacaoSalva) {
                 cotacaoMilha = parseFloat(cotacaoSalva);
@@ -822,6 +1149,7 @@
         function salvarDados() {
             localStorage.setItem('agendamentos', JSON.stringify(agendamentos));
             localStorage.setItem('historico', JSON.stringify(historico));
+            localStorage.setItem('cotacoes', JSON.stringify(cotacoes));
         }
         
         function showTab(tabName) {
@@ -1017,6 +1345,9 @@
             }
             if (document.getElementById('agendamentos').classList.contains('active')) {
                 renderizarListaAgendamentos();
+            }
+            if (document.getElementById('cotacoes').classList.contains('active')) {
+                atualizarListaCotacoes();
             }
         }
         
@@ -1747,7 +2078,7 @@
             alert(`Preço médio calculado para voo ${tipo}: R$ ${precoMedio.toFixed(2).replace('.', ',')}`);
         }
 
-        function salvarCotacao() {
+        function salvarCotacaoMilha() {
             const valor = parseFloat(document.getElementById('cotacaoMilha').value);
             if (!isNaN(valor) && valor > 0) {
                 cotacaoMilha = valor;
@@ -2241,7 +2572,773 @@ ${agendamento.link || ''}`;
             });
         }
 
-        const DADOS_INICIAIS =
+        // ===== FUNÇÕES DE COTAÇÃO =====
+
+        // Base de dados de códigos IATA
+        const aeroportosIATA = {
+            // Brasil - Principais
+            'GRU': 'São Paulo - Guarulhos (GRU)',
+            'CGH': 'São Paulo - Congonhas (CGH)',
+            'VCP': 'Campinas - Viracopos (VCP)',
+            'GIG': 'Rio de Janeiro - Galeão (GIG)',
+            'SDU': 'Rio de Janeiro - Santos Dumont (SDU)',
+            'BSB': 'Brasília (BSB)',
+            'CNF': 'Belo Horizonte - Confins (CNF)',
+            'PLU': 'Belo Horizonte - Pampulha (PLU)',
+            'SSA': 'Salvador (SSA)',
+            'REC': 'Recife (REC)',
+            'FOR': 'Fortaleza (FOR)',
+            'CWB': 'Curitiba - Afonso Pena (CWB)',
+            'POA': 'Porto Alegre (POA)',
+            'FLN': 'Florianópolis (FLN)',
+            'MAO': 'Manaus (MAO)',
+            'BEL': 'Belém (BEL)',
+            'NAT': 'Natal (NAT)',
+            'MCZ': 'Maceió (MCZ)',
+            'VIX': 'Vitória (VIX)',
+            'CGB': 'Cuiabá (CGB)',
+            'IGU': 'Foz do Iguaçu (IGU)',
+            'GYN': 'Goiânia (GYN)',
+            'AJU': 'Aracaju (AJU)',
+            'THE': 'Teresina (THE)',
+            'SLZ': 'São Luís (SLZ)',
+            'JPA': 'João Pessoa (JPA)',
+            'CGR': 'Campo Grande (CGR)',
+            'CXJ': 'Caxias do Sul (CXJ)',
+            'NVT': 'Navegantes (NVT)',
+            'IOS': 'Ilhéus (IOS)',
+            'PVH': 'Porto Velho (PVH)',
+            'RBR': 'Rio Branco (RBR)',
+            'BVB': 'Boa Vista (BVB)',
+            'PNZ': 'Petrolina (PNZ)',
+            'JDO': 'Juazeiro do Norte (JDO)',
+
+            // Europa
+            'LIS': 'Lisboa (LIS)',
+            'OPO': 'Porto (OPO)',
+            'MAD': 'Madrid (MAD)',
+            'BCN': 'Barcelona (BCN)',
+            'LHR': 'Londres - Heathrow (LHR)',
+            'LGW': 'Londres - Gatwick (LGW)',
+            'CDG': 'Paris - Charles de Gaulle (CDG)',
+            'ORY': 'Paris - Orly (ORY)',
+            'FCO': 'Roma - Fiumicino (FCO)',
+            'MXP': 'Milão - Malpensa (MXP)',
+            'AMS': 'Amsterdam (AMS)',
+            'FRA': 'Frankfurt (FRA)',
+            'MUC': 'Munique (MUC)',
+            'ZRH': 'Zurique (ZRH)',
+            'VIE': 'Viena (VIE)',
+            'ATH': 'Atenas (ATH)',
+            'IST': 'Istambul (IST)',
+            'DUB': 'Dublin (DUB)',
+            'BRU': 'Bruxelas (BRU)',
+            'CPH': 'Copenhague (CPH)',
+            'OSL': 'Oslo (OSL)',
+            'ARN': 'Estocolmo (ARN)',
+            'HEL': 'Helsinque (HEL)',
+            'WAW': 'Varsóvia (WAW)',
+            'PRG': 'Praga (PRG)',
+            'BUD': 'Budapeste (BUD)',
+
+            // América do Norte
+            'JFK': 'Nova York - JFK (JFK)',
+            'EWR': 'Nova York - Newark (EWR)',
+            'LGA': 'Nova York - LaGuardia (LGA)',
+            'MIA': 'Miami (MIA)',
+            'FLL': 'Fort Lauderdale (FLL)',
+            'MCO': 'Orlando (MCO)',
+            'LAX': 'Los Angeles (LAX)',
+            'SFO': 'San Francisco (SFO)',
+            'ORD': 'Chicago - O\'Hare (ORD)',
+            'DFW': 'Dallas (DFW)',
+            'IAH': 'Houston (IAH)',
+            'ATL': 'Atlanta (ATL)',
+            'BOS': 'Boston (BOS)',
+            'DEN': 'Denver (DEN)',
+            'SEA': 'Seattle (SEA)',
+            'LAS': 'Las Vegas (LAS)',
+            'PHX': 'Phoenix (PHX)',
+            'YYZ': 'Toronto (YYZ)',
+            'YUL': 'Montreal (YUL)',
+            'YVR': 'Vancouver (YVR)',
+            'MEX': 'Cidade do México (MEX)',
+            'CUN': 'Cancún (CUN)',
+            'PTY': 'Panamá City (PTY)',
+
+            // América do Sul
+            'EZE': 'Buenos Aires - Ezeiza (EZE)',
+            'AEP': 'Buenos Aires - Aeroparque (AEP)',
+            'SCL': 'Santiago (SCL)',
+            'LIM': 'Lima (LIM)',
+            'BOG': 'Bogotá (BOG)',
+            'UIO': 'Quito (UIO)',
+            'GYE': 'Guayaquil (GYE)',
+            'CCS': 'Caracas (CCS)',
+            'ASU': 'Assunção (ASU)',
+            'MVD': 'Montevidéu (MVD)',
+
+            // Ásia
+            'DXB': 'Dubai (DXB)',
+            'DOH': 'Doha (DOH)',
+            'SIN': 'Singapura (SIN)',
+            'HKG': 'Hong Kong (HKG)',
+            'NRT': 'Tóquio - Narita (NRT)',
+            'ICN': 'Seul (ICN)',
+            'PEK': 'Pequim (PEK)',
+            'PVG': 'Xangai (PVG)',
+            'BKK': 'Bangkok (BKK)',
+            'DEL': 'Nova Delhi (DEL)',
+
+            // Oceania
+            'SYD': 'Sydney (SYD)',
+            'MEL': 'Melbourne (MEL)',
+            'AKL': 'Auckland (AKL)',
+
+            // África
+            'JNB': 'Joanesburgo (JNB)',
+            'CPT': 'Cidade do Cabo (CPT)',
+            'CAI': 'Cairo (CAI)',
+            'ADD': 'Adis Abeba (ADD)'
+        };
+
+        function autoCompletarAeroporto(inputId) {
+            const input = document.getElementById(inputId);
+            const valor = input.value.trim().toUpperCase();
+
+            if (aeroportosIATA[valor]) {
+                input.value = aeroportosIATA[valor];
+            }
+        }
+
+        function toggleConexaoIda() {
+            const tem = document.getElementById('cotacao_conexaoIda').value;
+            document.getElementById('detalhesConexaoIda').style.display = tem === 'sim' ? 'block' : 'none';
+            if (tem === 'sim') {
+                mostrarParadasIda(); // Mostrar paradas quando abrir
+            }
+        }
+
+        function toggleConexaoVolta() {
+            const tem = document.getElementById('cotacao_conexaoVolta').value;
+            document.getElementById('detalhesConexaoVolta').style.display = tem === 'sim' ? 'block' : 'none';
+            if (tem === 'sim') {
+                mostrarParadasVolta(); // Mostrar paradas quando abrir
+            }
+        }
+
+        function mostrarParadasIda() {
+            const numParadas = parseInt(document.getElementById('cotacao_numParadasIda').value);
+
+            document.getElementById('parada1Ida').style.display = 'block';
+            document.getElementById('parada2Ida').style.display = numParadas >= 2 ? 'block' : 'none';
+            document.getElementById('parada3Ida').style.display = numParadas >= 3 ? 'block' : 'none';
+        }
+
+        function mostrarParadasVolta() {
+            const numParadas = parseInt(document.getElementById('cotacao_numParadasVolta').value);
+
+            document.getElementById('parada1Volta').style.display = 'block';
+            document.getElementById('parada2Volta').style.display = numParadas >= 2 ? 'block' : 'none';
+            document.getElementById('parada3Volta').style.display = numParadas >= 3 ? 'block' : 'none';
+        }
+
+        function toggleVolta() {
+            const tipo = document.getElementById('cotacao_tipoViagem').value;
+            const secaoVolta = document.getElementById('secaoVolta');
+
+            if (tipo === 'somente-ida') {
+                secaoVolta.style.display = 'none';
+            } else {
+                secaoVolta.style.display = 'block';
+            }
+        }
+
+        function atualizarTotalPassageiros() {
+            const adultos = parseInt(document.getElementById('cotacao_adultos').value) || 0;
+            const criancas = parseInt(document.getElementById('cotacao_criancas').value) || 0;
+            const bebes = parseInt(document.getElementById('cotacao_bebes').value) || 0;
+
+            let texto = [];
+            if (adultos > 0) texto.push(`${adultos} adulto${adultos > 1 ? 's' : ''}`);
+            if (criancas > 0) texto.push(`${criancas} criança${criancas > 1 ? 's' : ''}`);
+            if (bebes > 0) texto.push(`${bebes} bebê${bebes > 1 ? 's' : ''}`);
+
+            document.getElementById('cotacao_numPassageiros').value = texto.join(', ');
+        }
+
+        function preencherBagagem() {
+            const tarifa = document.getElementById('cotacao_tipoTarifa').value;
+            const campoBagagem = document.getElementById('cotacao_bagagem');
+
+            const bagagens = {
+                'Básica': '1 bolsa ou mochila (por pessoa)\nSem direito a mala despachada',
+                'Light': '1 bolsa ou mochila até 10 kg (por pessoa)\n1 mala pequena até 12 kg (por pessoa)\nSujeita a ser despachada no embarque',
+                'Standard': '1 bolsa ou mochila até 10 kg (por pessoa)\nDeve ser acomodada no assento da frente\n1 bagagem despachada 23 kg (por pessoa)\nRemarcação com taxa - diferença de preço',
+                'Plus': '1 bolsa ou mochila até 10 kg (por pessoa)\nDeve ser acomodada no assento da frente\n1 bagagem despachada 23 kg (por pessoa)\nRemarcação com taxa - diferença de preço\nReembolso antes da partida do primeiro voo',
+                'Executiva': '1 bolsa ou mochila até 10 kg (por pessoa)\n1 bagagem despachada 23 kg (por pessoa)\nRemarcação sem taxa - diferença de preço\nSeleção de assento comum\nSolicitação de upgrade de cabine com trechos'
+            };
+
+            campoBagagem.value = bagagens[tarifa] || '';
+        }
+
+        function calcularTempoVooIda() {
+            const horaSaida = document.getElementById('cotacao_horaSaidaIda').value;
+            const horaChegada = document.getElementById('cotacao_horaChegadaIda').value;
+            const dataIda = document.getElementById('cotacao_dataIda').value;
+
+            if (!horaSaida || !horaChegada || !dataIda) return;
+
+            const [horaSaidaH, horaSaidaM] = horaSaida.split(':').map(Number);
+            const [horaChegadaH, horaChegadaM] = horaChegada.split(':').map(Number);
+
+            let inicio = new Date(dataIda + 'T' + horaSaida);
+            let fim = new Date(dataIda + 'T' + horaChegada);
+
+            // Se hora de chegada for menor que saída, adiciona 1 dia
+            if (fim < inicio) {
+                fim.setDate(fim.getDate() + 1);
+            }
+
+            const diffMs = fim - inicio;
+            const diffHoras = Math.floor(diffMs / (1000 * 60 * 60));
+            const diffMinutos = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
+
+            const tempoTexto = `${diffHoras}h ${diffMinutos}min`;
+            document.getElementById('cotacao_tempoVooIda').value = tempoTexto;
+        }
+
+        function calcularTempoVooVolta() {
+            const horaSaida = document.getElementById('cotacao_horaSaidaVolta').value;
+            const horaChegada = document.getElementById('cotacao_horaChegadaVolta').value;
+            const dataVolta = document.getElementById('cotacao_dataVolta').value;
+
+            if (!horaSaida || !horaChegada || !dataVolta) return;
+
+            const [horaSaidaH, horaSaidaM] = horaSaida.split(':').map(Number);
+            const [horaChegadaH, horaChegadaM] = horaChegada.split(':').map(Number);
+
+            let inicio = new Date(dataVolta + 'T' + horaSaida);
+            let fim = new Date(dataVolta + 'T' + horaChegada);
+
+            // Se hora de chegada for menor que saída, adiciona 1 dia
+            if (fim < inicio) {
+                fim.setDate(fim.getDate() + 1);
+            }
+
+            const diffMs = fim - inicio;
+            const diffHoras = Math.floor(diffMs / (1000 * 60 * 60));
+            const diffMinutos = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
+
+            const tempoTexto = `${diffHoras}h ${diffMinutos}min`;
+            document.getElementById('cotacao_tempoVooVolta').value = tempoTexto;
+        }
+
+        function atualizarInfoCalculoMilhas() {
+            const companhia = document.getElementById('cotacao_companhia').value;
+            const infoElement = document.getElementById('infoCalculoMilhas');
+
+            if (companhia === 'LATAM') {
+                infoElement.textContent = '⚠️ Valor POR PESSOA (será multiplicado pelo número de passageiros)';
+                infoElement.style.color = '#4CAF50';
+            } else if (companhia === 'GOL' || companhia === 'Azul') {
+                infoElement.textContent = '⚠️ Valor TOTAL (NÃO multiplica, já é o valor final)';
+                infoElement.style.color = '#FF9800';
+            } else {
+                infoElement.textContent = '';
+            }
+        }
+
+        function calcularCotacao() {
+            const milhasInput = document.getElementById('cotacao_milhas').value;
+            const valorMilheiroInput = document.getElementById('cotacao_valorMilheiro').value;
+            const taxasInput = document.getElementById('cotacao_taxas').value;
+            const adultos = parseInt(document.getElementById('cotacao_adultos').value) || 0;
+            const criancas = parseInt(document.getElementById('cotacao_criancas').value) || 0;
+            const bebes = parseInt(document.getElementById('cotacao_bebes').value) || 0;
+            const numPassageiros = adultos + criancas + bebes;
+            const companhia = document.getElementById('cotacao_companhia').value;
+
+            if (!milhasInput || !valorMilheiroInput) {
+                document.getElementById('cotacao_valorPessoa').textContent = '-';
+                document.getElementById('cotacao_valorTotal').textContent = '-';
+                document.getElementById('cotacao_parcela').textContent = '-';
+                document.getElementById('cotacao_totalParcelado').textContent = '-';
+                return;
+            }
+
+            const milhasNum = parseFloat(milhasInput.replace(/[^\d]/g, ''));
+            const valorMilheiroNum = parseFloat(valorMilheiroInput.replace(/[^\d,]/g, '').replace(',', '.'));
+            const taxasNum = taxasInput ? parseFloat(taxasInput.replace(/[^\d,]/g, '').replace(',', '.')) : 0;
+
+            const custoMilhas = (milhasNum / 1000) * valorMilheiroNum;
+
+            // Verificar se é valor por pessoa ou total
+            const valorPorPessoaMultiplica = (companhia === 'LATAM');
+
+            let custoPorPessoa, custoTotalPix;
+
+            if (valorPorPessoaMultiplica) {
+                // LATAM: valor é POR PESSOA
+                custoPorPessoa = custoMilhas + (isNaN(taxasNum) ? 0 : taxasNum);
+                custoTotalPix = custoPorPessoa * numPassageiros;
+            } else {
+                // GOL (Smiles) e Azul: valor JÁ É O TOTAL
+                custoTotalPix = custoMilhas + (isNaN(taxasNum) ? 0 : taxasNum);
+                custoPorPessoa = custoTotalPix / numPassageiros;
+            }
+
+            const custoTotalCartao = custoTotalPix * 1.088;
+            const parcelaCartao = custoTotalCartao / 5;
+
+            document.getElementById('cotacao_valorPessoa').textContent = `R$ ${custoPorPessoa.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+            document.getElementById('cotacao_valorTotal').textContent = `R$ ${custoTotalPix.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+            document.getElementById('cotacao_parcela').textContent = `R$ ${parcelaCartao.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+            document.getElementById('cotacao_totalParcelado').textContent = `R$ ${custoTotalCartao.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+        }
+
+        function copiarCotacaoWhatsApp() {
+            // Validação básica
+            const nomeCliente = document.getElementById('cotacao_nomeCliente').value;
+            const origem = document.getElementById('cotacao_origem').value;
+            const destino = document.getElementById('cotacao_destino').value;
+
+            if (!nomeCliente || !origem || !destino) {
+                alert('Preencha pelo menos: Nome do Cliente, Origem e Destino');
+                return;
+            }
+
+            calcularCotacao(); // Garantir que valores estão atualizados
+
+            const numPassageiros = document.getElementById('cotacao_numPassageiros').value;
+            const companhia = document.getElementById('cotacao_companhia').value;
+            const tipoTarifa = document.getElementById('cotacao_tipoTarifa').value;
+            const dataIda = document.getElementById('cotacao_dataIda').value;
+            const horaSaidaIda = document.getElementById('cotacao_horaSaidaIda').value;
+            const horaChegadaIda = document.getElementById('cotacao_horaChegadaIda').value;
+            const conexaoIda = document.getElementById('cotacao_conexaoIda').value;
+
+            // Paradas IDA
+            let paradasIdaTexto = 'Voo direto';
+            if (conexaoIda === 'sim') {
+                const numParadasIda = parseInt(document.getElementById('cotacao_numParadasIda').value);
+                let paradas = [];
+
+                for (let i = 1; i <= numParadasIda; i++) {
+                    const cidade = document.getElementById(`cotacao_parada${i}CidadeIda`).value;
+                    const tempo = document.getElementById(`cotacao_parada${i}TempoIda`).value;
+                    if (cidade) {
+                        paradas.push(tempo ? `${cidade} (${tempo})` : cidade);
+                    }
+                }
+
+                if (paradas.length > 0) {
+                    paradasIdaTexto = `${paradas.length} ${paradas.length === 1 ? 'parada' : 'paradas'}: ${paradas.join(', ')}`;
+                }
+            }
+
+            const dataVolta = document.getElementById('cotacao_dataVolta').value;
+            const horaSaidaVolta = document.getElementById('cotacao_horaSaidaVolta').value;
+            const horaChegadaVolta = document.getElementById('cotacao_horaChegadaVolta').value;
+            const conexaoVolta = document.getElementById('cotacao_conexaoVolta').value;
+
+            // Paradas VOLTA
+            let paradasVoltaTexto = 'Voo direto';
+            if (conexaoVolta === 'sim') {
+                const numParadasVolta = parseInt(document.getElementById('cotacao_numParadasVolta').value);
+                let paradas = [];
+
+                for (let i = 1; i <= numParadasVolta; i++) {
+                    const cidade = document.getElementById(`cotacao_parada${i}CidadeVolta`).value;
+                    const tempo = document.getElementById(`cotacao_parada${i}TempoVolta`).value;
+                    if (cidade) {
+                        paradas.push(tempo ? `${cidade} (${tempo})` : cidade);
+                    }
+                }
+
+                if (paradas.length > 0) {
+                    paradasVoltaTexto = `${paradas.length} ${paradas.length === 1 ? 'parada' : 'paradas'}: ${paradas.join(', ')}`;
+                }
+            }
+
+            const valorPessoa = document.getElementById('cotacao_valorPessoa').textContent;
+            const valorTotal = document.getElementById('cotacao_valorTotal').textContent;
+            const parcela = document.getElementById('cotacao_parcela').textContent;
+            const totalParcelado = document.getElementById('cotacao_totalParcelado').textContent;
+
+            const bagagem = document.getElementById('cotacao_bagagem').value;
+
+            // Formatar datas
+            const dataIdaFormatada = dataIda ? new Date(dataIda + 'T00:00:00').toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }) : '';
+            const dataVoltaFormatada = dataVolta ? new Date(dataVolta + 'T00:00:00').toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }) : '';
+            const diaSemanaIda = dataIda ? new Date(dataIda + 'T00:00:00').toLocaleDateString('pt-BR', { weekday: 'long' }).toUpperCase() : '';
+            const diaSemanaVolta = dataVolta ? new Date(dataVolta + 'T00:00:00').toLocaleDateString('pt-BR', { weekday: 'long' }).toUpperCase() : '';
+
+            const tempoVooIda = document.getElementById('cotacao_tempoVooIda').value || '';
+            const tempoVooVolta = document.getElementById('cotacao_tempoVooVolta').value || '';
+            const tipoViagem = document.getElementById('cotacao_tipoViagem').value;
+
+            const simboloRota = tipoViagem === 'somente-ida' ? '→' : '↔';
+
+            let voltaTexto = '';
+            if (tipoViagem === 'ida-volta' && dataVolta) {
+                voltaTexto = `✈️ *VOLTA: ${dataVoltaFormatada} – ${diaSemanaVolta}*
+${horaSaidaVolta} (${destino}) → ${horaChegadaVolta} (${origem})${tempoVooVolta ? `\n⏱️ Tempo de voo: ${tempoVooVolta}` : ''}
+*${paradasVoltaTexto}*
+────
+`;
+            }
+
+            const post = `────
+*${origem.toUpperCase()} ${simboloRota} ${destino.toUpperCase()}*
+────
+${companhia}
+*${numPassageiros}*
+────
+${tipoTarifa ? `*TARIFA ${tipoTarifa.toUpperCase()}*\n────\n` : ''}💰 *VALORES*
+
+*${valorPessoa}* por pessoa
+
+💵 *PIX*
+*${valorTotal}* Total
+
+💳 *CARTÃO*
+*5x de ${parcela}*
+_${totalParcelado} total parcelado_
+────
+✈️ *IDA: ${dataIdaFormatada} – ${diaSemanaIda}*
+${horaSaidaIda} (${origem}) → ${horaChegadaIda} (${destino})${tempoVooIda ? `\n⏱️ Tempo de voo: ${tempoVooIda}` : ''}
+*${paradasIdaTexto}*
+────
+${voltaTexto}${bagagem ? `🧳 *Bagagem (por pessoa)*\n${bagagem}\n────\n` : ''}✅ Taxas inclusas
+────
+⚠️ AS *TARIFAS SÃO DINÂMICAS* E PODEM SOFRER ALTERAÇÕES SEM AVISO PRÉVIO POR PARTE DA COMPANHIA AÉREA.
+────`;
+
+            navigator.clipboard.writeText(post).then(() => {
+                alert('Cotação copiada para WhatsApp!\n\nAgora cole no WhatsApp do cliente.');
+                console.log(post);
+            }).catch(() => {
+                alert('Cotação gerada (copie do console):\n\n' + post);
+            });
+        }
+
+        function gerarPDFCotacao() {
+            console.log('gerarPDFCotacao chamada');
+            console.log('window.jspdf:', window.jspdf);
+
+            const nomeCliente = document.getElementById('cotacao_nomeCliente').value;
+            const numPassageiros = document.getElementById('cotacao_numPassageiros').value;
+            const origem = document.getElementById('cotacao_origem').value;
+            const destino = document.getElementById('cotacao_destino').value;
+            const companhia = document.getElementById('cotacao_companhia').value;
+            const tipoTarifa = document.getElementById('cotacao_tipoTarifa').value;
+
+            const dataIda = document.getElementById('cotacao_dataIda').value;
+            const horaSaidaIda = document.getElementById('cotacao_horaSaidaIda').value;
+            const horaChegadaIda = document.getElementById('cotacao_horaChegadaIda').value;
+            const conexaoIda = document.getElementById('cotacao_conexaoIda').checked;
+            const conexaoTextoIda = document.getElementById('cotacao_conexaoTextoIda').value;
+
+            const dataVolta = document.getElementById('cotacao_dataVolta').value;
+            const horaSaidaVolta = document.getElementById('cotacao_horaSaidaVolta').value;
+            const horaChegadaVolta = document.getElementById('cotacao_horaChegadaVolta').value;
+            const conexaoVolta = document.getElementById('cotacao_conexaoVolta').checked;
+            const conexaoTextoVolta = document.getElementById('cotacao_conexaoTextoVolta').value;
+
+            const bagagem = document.getElementById('cotacao_bagagem').value;
+
+            const valorPessoa = document.getElementById('cotacao_valorPessoa').textContent;
+            const valorTotal = document.getElementById('cotacao_valorTotal').textContent;
+            const parcela = document.getElementById('cotacao_parcela').textContent;
+            const totalParcelado = document.getElementById('cotacao_totalParcelado').textContent;
+
+            if (!nomeCliente || !origem || !destino || !companhia || !dataIda || !dataVolta) {
+                alert('Preencha todos os campos obrigatórios antes de gerar o PDF.');
+                return;
+            }
+
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+
+            const pageWidth = doc.internal.pageSize.getWidth();
+            const pageHeight = doc.internal.pageSize.getHeight();
+
+            // Barra dourada no topo
+            doc.setFillColor(218, 165, 32);
+            doc.rect(0, 0, pageWidth, 25, 'F');
+
+            // Logo/Nome da empresa
+            doc.setTextColor(255, 255, 255);
+            doc.setFontSize(22);
+            doc.setFont('helvetica', 'bold');
+            doc.text('VOECOMKENNEDY', pageWidth / 2, 12, { align: 'center' });
+
+            doc.setFontSize(10);
+            doc.setFont('helvetica', 'normal');
+            doc.text('Passagens Aéreas', pageWidth / 2, 18, { align: 'center' });
+
+            // Contato
+            doc.setFontSize(8);
+            doc.text('WhatsApp: (35) 98829-2395 | Email: contato@voecomkennedy.com.br', pageWidth / 2, 23, { align: 'center' });
+
+            // Título do documento
+            doc.setTextColor(0, 0, 0);
+            doc.setFontSize(16);
+            doc.setFont('helvetica', 'bold');
+            doc.text('ORÇAMENTO DE VIAGEM', pageWidth / 2, 35, { align: 'center' });
+
+            // Linha separadora
+            doc.setDrawColor(218, 165, 32);
+            doc.setLineWidth(0.5);
+            doc.line(15, 40, pageWidth - 15, 40);
+
+            let yPos = 50;
+
+            // Dados do Cliente
+            doc.setFontSize(12);
+            doc.setFont('helvetica', 'bold');
+            doc.text('DADOS DO CLIENTE', 15, yPos);
+            yPos += 7;
+
+            doc.setFontSize(10);
+            doc.setFont('helvetica', 'normal');
+            doc.text(`Cliente: ${nomeCliente}`, 15, yPos);
+            yPos += 6;
+            doc.text(`Número de Passageiros: ${numPassageiros}`, 15, yPos);
+            yPos += 10;
+
+            // Detalhes do Voo
+            doc.setFontSize(12);
+            doc.setFont('helvetica', 'bold');
+            doc.text('DETALHES DO VOO', 15, yPos);
+            yPos += 7;
+
+            doc.setFontSize(10);
+            doc.setFont('helvetica', 'normal');
+            doc.text(`Origem: ${origem.toUpperCase()}`, 15, yPos);
+            yPos += 6;
+            doc.text(`Destino: ${destino.toUpperCase()}`, 15, yPos);
+            yPos += 6;
+            doc.text(`Companhia Aérea: ${companhia}`, 15, yPos);
+            yPos += 6;
+            if (tipoTarifa) {
+                doc.text(`Tipo de Tarifa: ${tipoTarifa}`, 15, yPos);
+                yPos += 6;
+            }
+            yPos += 5;
+
+            // Voo de IDA
+            doc.setFontSize(11);
+            doc.setFont('helvetica', 'bold');
+            const dataIdaFormatada = new Date(dataIda + 'T00:00:00').toLocaleDateString('pt-BR', {
+                weekday: 'long',
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric'
+            });
+            doc.text(`VOO DE IDA - ${dataIdaFormatada}`, 15, yPos);
+            yPos += 6;
+
+            doc.setFontSize(10);
+            doc.setFont('helvetica', 'normal');
+            doc.text(`Saída: ${horaSaidaIda} (${origem})`, 15, yPos);
+            yPos += 6;
+            doc.text(`Chegada: ${horaChegadaIda} (${destino})`, 15, yPos);
+            yPos += 6;
+
+            if (conexaoIda && conexaoTextoIda) {
+                doc.setFont('helvetica', 'italic');
+                doc.text(`Conexão: ${conexaoTextoIda}`, 15, yPos);
+                yPos += 6;
+                doc.setFont('helvetica', 'normal');
+            } else {
+                doc.text('Voo Direto', 15, yPos);
+                yPos += 6;
+            }
+            yPos += 5;
+
+            // Voo de VOLTA
+            doc.setFontSize(11);
+            doc.setFont('helvetica', 'bold');
+            const dataVoltaFormatada = new Date(dataVolta + 'T00:00:00').toLocaleDateString('pt-BR', {
+                weekday: 'long',
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric'
+            });
+            doc.text(`VOO DE VOLTA - ${dataVoltaFormatada}`, 15, yPos);
+            yPos += 6;
+
+            doc.setFontSize(10);
+            doc.setFont('helvetica', 'normal');
+            doc.text(`Saída: ${horaSaidaVolta} (${destino})`, 15, yPos);
+            yPos += 6;
+            doc.text(`Chegada: ${horaChegadaVolta} (${origem})`, 15, yPos);
+            yPos += 6;
+
+            if (conexaoVolta && conexaoTextoVolta) {
+                doc.setFont('helvetica', 'italic');
+                doc.text(`Conexão: ${conexaoTextoVolta}`, 15, yPos);
+                yPos += 6;
+                doc.setFont('helvetica', 'normal');
+            } else {
+                doc.text('Voo Direto', 15, yPos);
+                yPos += 6;
+            }
+            yPos += 5;
+
+            // Bagagem
+            if (bagagem) {
+                doc.setFontSize(11);
+                doc.setFont('helvetica', 'bold');
+                doc.text('BAGAGEM INCLUÍDA (por pessoa)', 15, yPos);
+                yPos += 6;
+
+                doc.setFontSize(10);
+                doc.setFont('helvetica', 'normal');
+                const linhasBagagem = doc.splitTextToSize(bagagem, pageWidth - 30);
+                doc.text(linhasBagagem, 15, yPos);
+                yPos += (linhasBagagem.length * 6) + 5;
+            }
+
+            // Valores
+            doc.setFillColor(240, 240, 240);
+            doc.rect(15, yPos - 3, pageWidth - 30, 35, 'F');
+
+            doc.setFontSize(12);
+            doc.setFont('helvetica', 'bold');
+            doc.text('VALORES', 20, yPos + 5);
+            yPos += 12;
+
+            doc.setFontSize(10);
+            doc.setFont('helvetica', 'normal');
+            doc.text(`Valor por Pessoa: ${valorPessoa}`, 20, yPos);
+            yPos += 6;
+            doc.text(`Total (PIX): ${valorTotal}`, 20, yPos);
+            yPos += 6;
+            doc.text(`Parcelado em 5x: ${parcela} (Total: ${totalParcelado})`, 20, yPos);
+            yPos += 6;
+            doc.setFontSize(8);
+            doc.setFont('helvetica', 'italic');
+            doc.text('Taxas inclusas', 20, yPos);
+            yPos += 12;
+
+            // Aviso importante
+            doc.setFontSize(9);
+            doc.setFont('helvetica', 'bold');
+            doc.setTextColor(200, 0, 0);
+            const avisoLinhas = doc.splitTextToSize('AS TARIFAS SÃO DINÂMICAS E PODEM SOFRER ALTERAÇÕES SEM AVISO PRÉVIO POR PARTE DA COMPANHIA AÉREA.', pageWidth - 30);
+            doc.text(avisoLinhas, pageWidth / 2, yPos, { align: 'center' });
+
+            // Rodapé
+            doc.setTextColor(150, 150, 150);
+            doc.setFontSize(8);
+            doc.setFont('helvetica', 'italic');
+            const dataGeracao = new Date().toLocaleString('pt-BR');
+            doc.text(`Orçamento gerado em: ${dataGeracao}`, pageWidth / 2, pageHeight - 10, { align: 'center' });
+
+            // Salvar PDF
+            const nomeArquivo = `Orcamento_${nomeCliente.replace(/\s+/g, '_')}_${origem}-${destino}_${new Date().getTime()}.pdf`;
+            doc.save(nomeArquivo);
+
+            alert('PDF gerado com sucesso!');
+        }
+
+        function salvarCotacao() {
+            const nomeCliente = document.getElementById('cotacao_nomeCliente').value;
+            const origem = document.getElementById('cotacao_origem').value;
+            const destino = document.getElementById('cotacao_destino').value;
+
+            if (!nomeCliente || !origem || !destino) {
+                alert('Preencha pelo menos: Nome, Origem e Destino');
+                return;
+            }
+
+            const agora = new Date();
+            const dataCotacao = agora.toLocaleDateString('pt-BR');
+            const horaCotacao = agora.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+
+            const cotacao = {
+                data_cotacao: dataCotacao,
+                hora_cotacao: horaCotacao,
+                nomeCliente: nomeCliente,
+                numPassageiros: document.getElementById('cotacao_numPassageiros').value,
+                origem: origem,
+                destino: destino,
+                companhia: document.getElementById('cotacao_companhia').value,
+                tipoTarifa: document.getElementById('cotacao_tipoTarifa').value,
+                tipoViagem: document.getElementById('cotacao_tipoViagem').value,
+                linkCompanhia: document.getElementById('cotacao_linkCompanhia').value,
+                dataIda: document.getElementById('cotacao_dataIda').value,
+                horaSaidaIda: document.getElementById('cotacao_horaSaidaIda').value,
+                horaChegadaIda: document.getElementById('cotacao_horaChegadaIda').value,
+                tempoVooIda: document.getElementById('cotacao_tempoVooIda').value,
+                conexaoIda: document.getElementById('cotacao_conexaoIda').value,
+                dataVolta: document.getElementById('cotacao_dataVolta').value,
+                horaSaidaVolta: document.getElementById('cotacao_horaSaidaVolta').value,
+                horaChegadaVolta: document.getElementById('cotacao_horaChegadaVolta').value,
+                tempoVooVolta: document.getElementById('cotacao_tempoVooVolta').value,
+                conexaoVolta: document.getElementById('cotacao_conexaoVolta').value,
+                milhas: document.getElementById('cotacao_milhas').value,
+                valorMilheiro: document.getElementById('cotacao_valorMilheiro').value,
+                taxas: document.getElementById('cotacao_taxas').value,
+                valorPessoa: document.getElementById('cotacao_valorPessoa').textContent,
+                valorTotal: document.getElementById('cotacao_valorTotal').textContent,
+                bagagem: document.getElementById('cotacao_bagagem').value
+            };
+
+            cotacoes.push(cotacao);
+            salvarDados();
+            atualizarListaCotacoes();
+            limparFormCotacao();
+            alert('✅ Cotação salva com sucesso!');
+        }
+
+        function limparFormCotacao() {
+            document.getElementById('formCotacao').reset();
+            document.getElementById('cotacao_valorPessoa').textContent = '-';
+            document.getElementById('cotacao_valorTotal').textContent = '-';
+            document.getElementById('cotacao_parcela').textContent = '-';
+            document.getElementById('cotacao_totalParcelado').textContent = '-';
+        }
+
+        function atualizarListaCotacoes() {
+            if (cotacoes.length === 0) {
+                document.getElementById('listaCotacoes').innerHTML = '<p style="color: #888;">Nenhuma cotação salva ainda.</p>';
+                return;
+            }
+
+            let html = '<table><thead><tr><th>Data</th><th>Cliente</th><th>Rota</th><th>Passag.</th><th>Valor Total</th><th>Ações</th></tr></thead><tbody>';
+
+            cotacoes.forEach((cot, index) => {
+                html += `<tr>
+                    <td>${cot.data_cotacao} ${cot.hora_cotacao}</td>
+                    <td>${cot.nomeCliente}</td>
+                    <td>${cot.origem} → ${cot.destino}</td>
+                    <td>${cot.numPassageiros}</td>
+                    <td style="font-weight: bold; color: #d4af37;">${cot.valorTotal}</td>
+                    <td>
+                        <div style="display: flex; gap: 5px; flex-wrap: wrap;">
+                            ${cot.linkCompanhia ? `<button class="btn btn-secondary" style="padding: 6px 12px; font-size: 0.8em;" onclick="window.open('${cot.linkCompanhia}', '_blank')">🔗 Ver Voo</button>` : ''}
+                            <button class="btn btn-danger" style="padding: 6px 12px; font-size: 0.8em;" onclick="excluirCotacao(${index})">Excluir</button>
+                        </div>
+                    </td>
+                </tr>`;
+            });
+
+            html += '</tbody></table>';
+            document.getElementById('listaCotacoes').innerHTML = html;
+        }
+
+        function excluirCotacao(index) {
+            if (confirm('Deseja excluir esta cotação?')) {
+                cotacoes.splice(index, 1);
+                salvarDados();
+                atualizarListaCotacoes();
+                alert('Cotação excluída!');
+            }
+        }
 
         carregarDados();
     </script>
