@@ -760,6 +760,9 @@
 
             <h3>Registros Arquivados</h3>
             <div id="listaHistorico"></div>
+
+            <h3 style="margin-top: 40px;">Histórico de Cotações</h3>
+            <div id="listaCotacoesHistorico"></div>
         </div>
 
         <div id="cotacoes" class="tab-content">
@@ -3429,11 +3432,60 @@ ${voltaTexto}${bagagem ? `🧳 *Bagagem (por pessoa)*\n${bagagem}\n────\
             const dataCotacao = agora.toLocaleDateString('pt-BR');
             const horaCotacao = agora.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
 
+            // Capturar informações de paradas IDA
+            let paradasIdaTexto = 'Voo direto';
+            let dadosParadasIda = {};
+            if (document.getElementById('cotacao_conexaoIda').value === 'sim') {
+                const numParadasIda = parseInt(document.getElementById('cotacao_numParadasIda')?.value || 0);
+                let paradas = [];
+
+                for (let i = 1; i <= numParadasIda; i++) {
+                    const cidade = document.getElementById(`cotacao_parada${i}CidadeIda`)?.value || '';
+                    const tempo = document.getElementById(`cotacao_parada${i}TempoIda`)?.value || '';
+                    if (cidade) {
+                        paradas.push(tempo ? `${cidade} (${tempo})` : cidade);
+                        dadosParadasIda[`parada${i}Cidade`] = cidade;
+                        dadosParadasIda[`parada${i}Tempo`] = tempo;
+                    }
+                }
+
+                dadosParadasIda.numParadas = numParadasIda;
+                if (paradas.length > 0) {
+                    paradasIdaTexto = `${paradas.length} ${paradas.length === 1 ? 'parada' : 'paradas'}: ${paradas.join(', ')}`;
+                }
+            }
+
+            // Capturar informações de paradas VOLTA
+            let paradasVoltaTexto = 'Voo direto';
+            let dadosParadasVolta = {};
+            if (document.getElementById('cotacao_conexaoVolta').value === 'sim') {
+                const numParadasVolta = parseInt(document.getElementById('cotacao_numParadasVolta')?.value || 0);
+                let paradas = [];
+
+                for (let i = 1; i <= numParadasVolta; i++) {
+                    const cidade = document.getElementById(`cotacao_parada${i}CidadeVolta`)?.value || '';
+                    const tempo = document.getElementById(`cotacao_parada${i}TempoVolta`)?.value || '';
+                    if (cidade) {
+                        paradas.push(tempo ? `${cidade} (${tempo})` : cidade);
+                        dadosParadasVolta[`parada${i}Cidade`] = cidade;
+                        dadosParadasVolta[`parada${i}Tempo`] = tempo;
+                    }
+                }
+
+                dadosParadasVolta.numParadas = numParadasVolta;
+                if (paradas.length > 0) {
+                    paradasVoltaTexto = `${paradas.length} ${paradas.length === 1 ? 'parada' : 'paradas'}: ${paradas.join(', ')}`;
+                }
+            }
+
             const cotacao = {
                 data_cotacao: dataCotacao,
                 hora_cotacao: horaCotacao,
                 nomeCliente: nomeCliente,
                 numPassageiros: document.getElementById('cotacao_numPassageiros').value,
+                adultos: document.getElementById('cotacao_adultos').value,
+                criancas: document.getElementById('cotacao_criancas').value,
+                bebes: document.getElementById('cotacao_bebes').value,
                 origem: origem,
                 destino: destino,
                 companhia: document.getElementById('cotacao_companhia').value,
@@ -3446,17 +3498,23 @@ ${voltaTexto}${bagagem ? `🧳 *Bagagem (por pessoa)*\n${bagagem}\n────\
                 horaChegadaIda: document.getElementById('cotacao_horaChegadaIda').value,
                 tempoVooIda: document.getElementById('cotacao_tempoVooIda').value,
                 conexaoIda: document.getElementById('cotacao_conexaoIda').value,
+                paradasIdaTexto: paradasIdaTexto,
+                dadosParadasIda: dadosParadasIda,
                 dataVolta: document.getElementById('cotacao_dataVolta').value,
                 horaSaidaVolta: document.getElementById('cotacao_horaSaidaVolta').value,
                 dataChegadaVolta: document.getElementById('cotacao_dataChegadaVolta').value,
                 horaChegadaVolta: document.getElementById('cotacao_horaChegadaVolta').value,
                 tempoVooVolta: document.getElementById('cotacao_tempoVooVolta').value,
                 conexaoVolta: document.getElementById('cotacao_conexaoVolta').value,
+                paradasVoltaTexto: paradasVoltaTexto,
+                dadosParadasVolta: dadosParadasVolta,
                 milhas: document.getElementById('cotacao_milhas').value,
                 valorMilheiro: document.getElementById('cotacao_valorMilheiro').value,
                 taxas: document.getElementById('cotacao_taxas').value,
                 valorPessoa: document.getElementById('cotacao_valorPessoa').textContent,
                 valorTotal: document.getElementById('cotacao_valorTotal').textContent,
+                parcela: document.getElementById('cotacao_parcela').textContent,
+                totalParcelado: document.getElementById('cotacao_totalParcelado').textContent,
                 bagagem: document.getElementById('cotacao_bagagem').value
             };
 
@@ -3478,6 +3536,9 @@ ${voltaTexto}${bagagem ? `🧳 *Bagagem (por pessoa)*\n${bagagem}\n────\
         function atualizarListaCotacoes() {
             if (cotacoes.length === 0) {
                 document.getElementById('listaCotacoes').innerHTML = '<p style="color: #888;">Nenhuma cotação salva ainda.</p>';
+                if (document.getElementById('listaCotacoesHistorico')) {
+                    document.getElementById('listaCotacoesHistorico').innerHTML = '<p style="color: #888;">Nenhuma cotação salva ainda.</p>';
+                }
                 return;
             }
 
@@ -3492,7 +3553,8 @@ ${voltaTexto}${bagagem ? `🧳 *Bagagem (por pessoa)*\n${bagagem}\n────\
                     <td style="font-weight: bold; color: #d4af37;">${cot.valorTotal}</td>
                     <td>
                         <div style="display: flex; gap: 5px; flex-wrap: wrap;">
-                            <button class="btn btn-primary" style="padding: 6px 12px; font-size: 0.8em;" onclick="abrirCotacao(${index})">📂 Abrir</button>
+                            <button class="btn" style="padding: 6px 12px; font-size: 0.8em; background: #4CAF50; color: white;" onclick="visualizarCotacao(${index})">👁️ Visualizar</button>
+                            <button class="btn btn-primary" style="padding: 6px 12px; font-size: 0.8em;" onclick="abrirCotacao(${index})">✏️ Editar</button>
                             ${cot.linkCompanhia ? `<button class="btn btn-secondary" style="padding: 6px 12px; font-size: 0.8em;" onclick="window.open('${cot.linkCompanhia}', '_blank')">🔗 Ver Voo</button>` : ''}
                             <button class="btn btn-danger" style="padding: 6px 12px; font-size: 0.8em;" onclick="excluirCotacao(${index})">Excluir</button>
                         </div>
@@ -3502,6 +3564,11 @@ ${voltaTexto}${bagagem ? `🧳 *Bagagem (por pessoa)*\n${bagagem}\n────\
 
             html += '</tbody></table>';
             document.getElementById('listaCotacoes').innerHTML = html;
+
+            // Atualizar também na aba Histórico
+            if (document.getElementById('listaCotacoesHistorico')) {
+                document.getElementById('listaCotacoesHistorico').innerHTML = html;
+            }
         }
 
         function excluirCotacao(index) {
@@ -3511,6 +3578,81 @@ ${voltaTexto}${bagagem ? `🧳 *Bagagem (por pessoa)*\n${bagagem}\n────\
                 atualizarListaCotacoes();
                 alert('Cotação excluída!');
             }
+        }
+
+        function visualizarCotacao(index) {
+            const cot = cotacoes[index];
+
+            // Formatar datas
+            const dataIdaFormatada = cot.dataIda ? new Date(cot.dataIda + 'T00:00:00').toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }) : '';
+            const dataChegadaIdaFormatada = cot.dataChegadaIda ? new Date(cot.dataChegadaIda + 'T00:00:00').toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }) : '';
+            const dataVoltaFormatada = cot.dataVolta ? new Date(cot.dataVolta + 'T00:00:00').toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }) : '';
+            const dataChegadaVoltaFormatada = cot.dataChegadaVolta ? new Date(cot.dataChegadaVolta + 'T00:00:00').toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }) : '';
+            const diaSemanaIda = cot.dataIda ? new Date(cot.dataIda + 'T00:00:00').toLocaleDateString('pt-BR', { weekday: 'long' }).toUpperCase() : '';
+            const diaSemanaVolta = cot.dataVolta ? new Date(cot.dataVolta + 'T00:00:00').toLocaleDateString('pt-BR', { weekday: 'long' }).toUpperCase() : '';
+
+            const simboloRota = (cot.tipoViagem === 'somente-ida') ? '→' : '↔';
+
+            // Texto de conexão IDA
+            let paradasIdaTexto = 'Voo direto';
+            if (cot.conexaoIda === 'sim') {
+                paradasIdaTexto = cot.paradasIdaTexto || 'Com conexão';
+            }
+
+            // Texto de conexão VOLTA
+            let paradasVoltaTexto = 'Voo direto';
+            if (cot.conexaoVolta === 'sim') {
+                paradasVoltaTexto = cot.paradasVoltaTexto || 'Com conexão';
+            }
+
+            // Montar texto da VOLTA
+            let voltaTexto = '';
+            if (cot.tipoViagem === 'ida-volta' && cot.dataVolta) {
+                const infoChegadaVolta = (cot.dataChegadaVolta && cot.dataChegadaVolta !== cot.dataVolta) ? ` (Chega ${dataChegadaVoltaFormatada})` : '';
+
+                voltaTexto = `✈️ *VOLTA: ${dataVoltaFormatada} – ${diaSemanaVolta}*
+${cot.horaSaidaVolta} (${cot.destino}) → ${cot.horaChegadaVolta} (${cot.origem})${infoChegadaVolta}${cot.tempoVooVolta ? `\n⏱️ Tempo de voo: ${cot.tempoVooVolta}` : ''}
+*${paradasVoltaTexto}*
+────
+`;
+            }
+
+            // Montar mensagem completa
+            const mensagem = `────
+*${cot.origem?.toUpperCase()} ${simboloRota} ${cot.destino?.toUpperCase()}*
+────
+${cot.companhia || 'N/A'}
+*${cot.numPassageiros || 'N/A'}*
+────
+${cot.tipoTarifa ? `*TARIFA ${cot.tipoTarifa.toUpperCase()}*\n────\n` : ''}💰 *VALORES*
+
+*${cot.valorPessoa || 'N/A'}* por pessoa
+
+💵 *PIX*
+*${cot.valorTotal || 'N/A'}* Total
+
+💳 *CARTÃO*
+*5x de ${cot.parcela || 'N/A'}*
+_${cot.totalParcelado || cot.valorTotal} total parcelado_
+────
+✈️ *IDA: ${dataIdaFormatada} – ${diaSemanaIda}*
+${cot.horaSaidaIda} (${cot.origem}) → ${cot.horaChegadaIda} (${cot.destino})${(cot.dataChegadaIda && cot.dataChegadaIda !== cot.dataIda) ? ` (Chega ${dataChegadaIdaFormatada})` : ''}${cot.tempoVooIda ? `\n⏱️ Tempo de voo: ${cot.tempoVooIda}` : ''}
+*${paradasIdaTexto}*
+────
+${voltaTexto}${cot.bagagem ? `🧳 *Bagagem (por pessoa)*\n${cot.bagagem}\n────\n` : ''}✅ Taxas inclusas
+────
+⚠️ AS *TARIFAS SÃO DINÂMICAS* E PODEM SOFRER ALTERAÇÕES SEM AVISO PRÉVIO POR PARTE DA COMPANHIA AÉREA.
+────
+
+👤 Cliente: ${cot.nomeCliente}
+📅 Cotação feita em: ${cot.data_cotacao} às ${cot.hora_cotacao}`;
+
+            // Copiar para clipboard
+            navigator.clipboard.writeText(mensagem).then(() => {
+                alert('📋 Cotação copiada para a área de transferência!\n\nVocê pode colar direto no WhatsApp do cliente.\n\n' + mensagem);
+            }).catch(() => {
+                alert('📋 Visualização da Cotação:\n\n' + mensagem);
+            });
         }
 
         function abrirCotacao(index) {
@@ -3546,6 +3688,27 @@ ${voltaTexto}${bagagem ? `🧳 *Bagagem (por pessoa)*\n${bagagem}\n────\
                 document.getElementById('cotacao_tempoVooIda').value = cot.tempoVooIda || '';
                 document.getElementById('cotacao_conexaoIda').value = cot.conexaoIda || 'nao';
 
+                // Carregar conexões IDA
+                if (cot.conexaoIda === 'sim' && cot.dadosParadasIda) {
+                    if (typeof toggleConexaoIda === 'function') toggleConexaoIda();
+
+                    if (cot.dadosParadasIda.numParadas) {
+                        document.getElementById('cotacao_numParadasIda').value = cot.dadosParadasIda.numParadas;
+                        if (typeof mostrarParadasIda === 'function') mostrarParadasIda();
+                    }
+
+                    for (let i = 1; i <= 3; i++) {
+                        const cidade = cot.dadosParadasIda[`parada${i}Cidade`];
+                        const tempo = cot.dadosParadasIda[`parada${i}Tempo`];
+                        if (cidade) {
+                            const campoCidade = document.getElementById(`cotacao_parada${i}CidadeIda`);
+                            const campoTempo = document.getElementById(`cotacao_parada${i}TempoIda`);
+                            if (campoCidade) campoCidade.value = cidade;
+                            if (campoTempo) campoTempo.value = tempo || '';
+                        }
+                    }
+                }
+
                 // Voo de VOLTA
                 document.getElementById('cotacao_dataVolta').value = cot.dataVolta || '';
                 document.getElementById('cotacao_horaSaidaVolta').value = cot.horaSaidaVolta || '';
@@ -3553,6 +3716,27 @@ ${voltaTexto}${bagagem ? `🧳 *Bagagem (por pessoa)*\n${bagagem}\n────\
                 document.getElementById('cotacao_horaChegadaVolta').value = cot.horaChegadaVolta || '';
                 document.getElementById('cotacao_tempoVooVolta').value = cot.tempoVooVolta || '';
                 document.getElementById('cotacao_conexaoVolta').value = cot.conexaoVolta || 'nao';
+
+                // Carregar conexões VOLTA
+                if (cot.conexaoVolta === 'sim' && cot.dadosParadasVolta) {
+                    if (typeof toggleConexaoVolta === 'function') toggleConexaoVolta();
+
+                    if (cot.dadosParadasVolta.numParadas) {
+                        document.getElementById('cotacao_numParadasVolta').value = cot.dadosParadasVolta.numParadas;
+                        if (typeof mostrarParadasVolta === 'function') mostrarParadasVolta();
+                    }
+
+                    for (let i = 1; i <= 3; i++) {
+                        const cidade = cot.dadosParadasVolta[`parada${i}Cidade`];
+                        const tempo = cot.dadosParadasVolta[`parada${i}Tempo`];
+                        if (cidade) {
+                            const campoCidade = document.getElementById(`cotacao_parada${i}CidadeVolta`);
+                            const campoTempo = document.getElementById(`cotacao_parada${i}TempoVolta`);
+                            if (campoCidade) campoCidade.value = cidade;
+                            if (campoTempo) campoTempo.value = tempo || '';
+                        }
+                    }
+                }
 
                 // Valores
                 document.getElementById('cotacao_milhas').value = cot.milhas || '';
