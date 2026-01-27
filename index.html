@@ -659,6 +659,13 @@
 
                 <div style="display: flex; gap: 10px; flex-wrap: wrap;">
                     <button type="button" class="btn" onclick="gerarPostCompleto()" style="background: linear-gradient(135deg, #d4af37 0%, #f4d03f 100%); color: #0a1929; font-weight: bold; flex: 1; min-width: 250px;">Gerar Post Completo VoeComKennedy</button>
+
+                    <button type="button" class="btn" onclick="enviarAlertaZAPI()" style="background: #25D366; color: white; font-weight: bold; flex: 1; min-width: 250px; display: flex; align-items: center; justify-content: center; gap: 10px; margin-top: 10px;">
+                        <span>Enviar para WhatsApp (Z-API)</span>
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/>
+                        </svg>
+                    </button>
                 </div>
                 <div style="display: flex; gap: 10px; margin-top: 10px;">
                     <button type="submit" class="btn btn-primary" id="btnSubmit">Cadastrar Agendamento</button>
@@ -875,12 +882,17 @@
                 <h3>Voo de IDA</h3>
                 <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
                     <div class="form-group">
-                        <label>Data IDA</label>
+                        <label>Data de Saída (IDA)</label>
                         <input type="date" id="cotacao_dataIda" required>
                     </div>
                     <div class="form-group">
                         <label>Horário Saída</label>
                         <input type="time" id="cotacao_horaSaidaIda" required onchange="calcularTempoVooIda()">
+                    </div>
+                    <div class="form-group">
+                        <label>Data de Chegada (IDA)</label>
+                        <input type="date" id="cotacao_dataChegadaIda">
+                        <small style="color: #888; display: block; margin-top: 3px;">Se chegar em dia diferente</small>
                     </div>
                     <div class="form-group">
                         <label>Horário Chegada</label>
@@ -956,12 +968,17 @@
                     <h3>Voo de VOLTA</h3>
                     <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
                         <div class="form-group">
-                            <label>Data VOLTA</label>
+                            <label>Data de Saída (VOLTA)</label>
                             <input type="date" id="cotacao_dataVolta">
                     </div>
                     <div class="form-group">
                         <label>Horário Saída</label>
                         <input type="time" id="cotacao_horaSaidaVolta" onchange="calcularTempoVooVolta()">
+                    </div>
+                    <div class="form-group">
+                        <label>Data de Chegada (VOLTA)</label>
+                        <input type="date" id="cotacao_dataChegadaVolta">
+                        <small style="color: #888; display: block; margin-top: 3px;">Se chegar em dia diferente</small>
                     </div>
                     <div class="form-group">
                         <label>Horário Chegada</label>
@@ -1114,6 +1131,55 @@
                 <button class="btn btn-danger" onclick="zerarSistema()">ZERAR SISTEMA COMPLETO</button>
             </div>
 
+            <div class="config-section" style="margin-top: 30px; margin-bottom: 30px; border: 2px solid #25D366; background: #0d1b2a; padding: 20px; border-radius: 8px;">
+                <h3 style="color: #25D366; margin-bottom: 20px; display: flex; align-items: center; gap: 10px;">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="#25D366">
+                        <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/>
+                    </svg>
+                    Integração WhatsApp (Z-API)
+                </h3>
+
+                <div style="display: grid; gap: 15px;">
+                    <div>
+                        <label style="display: block; margin-bottom: 5px; color: #90caf9;">Instance ID:</label>
+                        <input type="text" id="zapiInstanceId" placeholder="Ex: 3EDD0D599BB271AB83F53EBEF7B316F4"
+                               style="width: 100%; padding: 10px; background: #15202b; color: #fff; border: 1px solid #1e3a5f; border-radius: 5px;">
+                    </div>
+
+                    <div>
+                        <label style="display: block; margin-bottom: 5px; color: #90caf9;">Token:</label>
+                        <input type="text" id="zapiToken" placeholder="Ex: 06F7A41C4F805CF4E4E22013"
+                               style="width: 100%; padding: 10px; background: #15202b; color: #fff; border: 1px solid #1e3a5f; border-radius: 5px;">
+                    </div>
+
+                    <div>
+                        <label style="display: block; margin-bottom: 5px; color: #90caf9;">Client Token (Chave Secreta):</label>
+                        <input type="password" id="zapiClientToken" placeholder="Ex: F171001aa061240959a73085f6204d309S"
+                               style="width: 100%; padding: 10px; background: #15202b; color: #fff; border: 1px solid #1e3a5f; border-radius: 5px;">
+                    </div>
+
+                    <div>
+                        <label style="display: block; margin-bottom: 5px; color: #90caf9;">Número de Destino (com DDI):</label>
+                        <input type="tel" id="zapiDestino" placeholder="Ex: 5562996448671"
+                               style="width: 100%; padding: 10px; background: #15202b; color: #fff; border: 1px solid #1e3a5f; border-radius: 5px;">
+                    </div>
+
+                    <button class="btn" onclick="salvarConfigZAPI()"
+                            style="background: #25D366; color: white; font-weight: bold; padding: 12px; margin-top: 10px;">
+                        💾 Salvar Configuração Z-API
+                    </button>
+                </div>
+
+                <div style="background: #1a2942; border-left: 4px solid #25D366; padding: 12px; margin-top: 15px; border-radius: 5px;">
+                    <strong style="color: #25D366;">📌 Onde encontrar suas credenciais:</strong>
+                    <p style="margin-top: 8px; color: #ccc; font-size: 14px;">
+                        1. Acesse: <a href="https://api.z-api.io" target="_blank" style="color: #90caf9;">https://api.z-api.io</a><br>
+                        2. Instance ID e Token: Na página da sua instância<br>
+                        3. Client Token: Em "Configurações" → "Segurança"
+                    </p>
+                </div>
+            </div>
+
             <div style="background: #1a2942; border-left: 4px solid #d32f2f; padding: 15px; margin-top: 20px; border-radius: 5px;">
                 <strong style="color: #d32f2f;">ATENÇÃO: Zerar Sistema</strong>
                 <p style="margin-top: 10px; color: #ccc;">O botão vermelho acima irá apagar TODOS os dados:</p>
@@ -1143,6 +1209,7 @@
     </div>
 
     <script>
+        let postConteudoGlobal = ""; // Variável global para armazenar o conteúdo do post
         let agendamentos = [];
         let historico = [];
         let cotacoes = [];
@@ -1171,6 +1238,18 @@
             if (cotacaoSalva) {
                 cotacaoMilha = parseFloat(cotacaoSalva);
                 document.getElementById('cotacaoMilha').value = cotacaoMilha;
+            }
+
+            // Carregar configurações Z-API
+            const zapiConfig = localStorage.getItem('zapiConfig');
+            if (zapiConfig) {
+                const config = JSON.parse(zapiConfig);
+                if (document.getElementById('zapiInstanceId')) {
+                    document.getElementById('zapiInstanceId').value = config.instanceId || '';
+                    document.getElementById('zapiToken').value = config.token || '';
+                    document.getElementById('zapiClientToken').value = config.clientToken || '';
+                    document.getElementById('zapiDestino').value = config.destino || '';
+                }
             }
 
             atualizarTudo();
@@ -2423,6 +2502,9 @@ Não achou o que procurava? A gente cota qualquer viagem para você aqui:
 👉 https://voecomkennedy.github.io/COTACAO/
 ---`;
 
+            // Salvar na variável global
+            postConteudoGlobal = post;
+
             // Copiar
             navigator.clipboard.writeText(post)
                 .then(() => alert('✅ Post Gerado e Copiado com SUCESSO!'))
@@ -2996,6 +3078,7 @@ ${agendamento.link || ''}`;
             const tipoTarifa = document.getElementById('cotacao_tipoTarifa').value;
             const dataIda = document.getElementById('cotacao_dataIda').value;
             const horaSaidaIda = document.getElementById('cotacao_horaSaidaIda').value;
+            const dataChegadaIda = document.getElementById('cotacao_dataChegadaIda').value;
             const horaChegadaIda = document.getElementById('cotacao_horaChegadaIda').value;
             const conexaoIda = document.getElementById('cotacao_conexaoIda').value;
 
@@ -3020,6 +3103,7 @@ ${agendamento.link || ''}`;
 
             const dataVolta = document.getElementById('cotacao_dataVolta').value;
             const horaSaidaVolta = document.getElementById('cotacao_horaSaidaVolta').value;
+            const dataChegadaVolta = document.getElementById('cotacao_dataChegadaVolta').value;
             const horaChegadaVolta = document.getElementById('cotacao_horaChegadaVolta').value;
             const conexaoVolta = document.getElementById('cotacao_conexaoVolta').value;
 
@@ -3051,7 +3135,9 @@ ${agendamento.link || ''}`;
 
             // Formatar datas
             const dataIdaFormatada = dataIda ? new Date(dataIda + 'T00:00:00').toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }) : '';
+            const dataChegadaIdaFormatada = dataChegadaIda ? new Date(dataChegadaIda + 'T00:00:00').toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }) : '';
             const dataVoltaFormatada = dataVolta ? new Date(dataVolta + 'T00:00:00').toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }) : '';
+            const dataChegadaVoltaFormatada = dataChegadaVolta ? new Date(dataChegadaVolta + 'T00:00:00').toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }) : '';
             const diaSemanaIda = dataIda ? new Date(dataIda + 'T00:00:00').toLocaleDateString('pt-BR', { weekday: 'long' }).toUpperCase() : '';
             const diaSemanaVolta = dataVolta ? new Date(dataVolta + 'T00:00:00').toLocaleDateString('pt-BR', { weekday: 'long' }).toUpperCase() : '';
 
@@ -3063,8 +3149,11 @@ ${agendamento.link || ''}`;
 
             let voltaTexto = '';
             if (tipoViagem === 'ida-volta' && dataVolta) {
+                // Se tem data de chegada diferente, mostrar
+                const infoChegadaVolta = (dataChegadaVolta && dataChegadaVolta !== dataVolta) ? ` (Chega ${dataChegadaVoltaFormatada})` : '';
+
                 voltaTexto = `✈️ *VOLTA: ${dataVoltaFormatada} – ${diaSemanaVolta}*
-${horaSaidaVolta} (${destino}) → ${horaChegadaVolta} (${origem})${tempoVooVolta ? `\n⏱️ Tempo de voo: ${tempoVooVolta}` : ''}
+${horaSaidaVolta} (${destino}) → ${horaChegadaVolta} (${origem})${infoChegadaVolta}${tempoVooVolta ? `\n⏱️ Tempo de voo: ${tempoVooVolta}` : ''}
 *${paradasVoltaTexto}*
 ────
 `;
@@ -3088,7 +3177,7 @@ ${tipoTarifa ? `*TARIFA ${tipoTarifa.toUpperCase()}*\n────\n` : ''}💰 
 _${totalParcelado} total parcelado_
 ────
 ✈️ *IDA: ${dataIdaFormatada} – ${diaSemanaIda}*
-${horaSaidaIda} (${origem}) → ${horaChegadaIda} (${destino})${tempoVooIda ? `\n⏱️ Tempo de voo: ${tempoVooIda}` : ''}
+${horaSaidaIda} (${origem}) → ${horaChegadaIda} (${destino})${(dataChegadaIda && dataChegadaIda !== dataIda) ? ` (Chega ${dataChegadaIdaFormatada})` : ''}${tempoVooIda ? `\n⏱️ Tempo de voo: ${tempoVooIda}` : ''}
 *${paradasIdaTexto}*
 ────
 ${voltaTexto}${bagagem ? `🧳 *Bagagem (por pessoa)*\n${bagagem}\n────\n` : ''}✅ Taxas inclusas
@@ -3353,11 +3442,13 @@ ${voltaTexto}${bagagem ? `🧳 *Bagagem (por pessoa)*\n${bagagem}\n────\
                 linkCompanhia: document.getElementById('cotacao_linkCompanhia').value,
                 dataIda: document.getElementById('cotacao_dataIda').value,
                 horaSaidaIda: document.getElementById('cotacao_horaSaidaIda').value,
+                dataChegadaIda: document.getElementById('cotacao_dataChegadaIda').value,
                 horaChegadaIda: document.getElementById('cotacao_horaChegadaIda').value,
                 tempoVooIda: document.getElementById('cotacao_tempoVooIda').value,
                 conexaoIda: document.getElementById('cotacao_conexaoIda').value,
                 dataVolta: document.getElementById('cotacao_dataVolta').value,
                 horaSaidaVolta: document.getElementById('cotacao_horaSaidaVolta').value,
+                dataChegadaVolta: document.getElementById('cotacao_dataChegadaVolta').value,
                 horaChegadaVolta: document.getElementById('cotacao_horaChegadaVolta').value,
                 tempoVooVolta: document.getElementById('cotacao_tempoVooVolta').value,
                 conexaoVolta: document.getElementById('cotacao_conexaoVolta').value,
@@ -3401,6 +3492,7 @@ ${voltaTexto}${bagagem ? `🧳 *Bagagem (por pessoa)*\n${bagagem}\n────\
                     <td style="font-weight: bold; color: #d4af37;">${cot.valorTotal}</td>
                     <td>
                         <div style="display: flex; gap: 5px; flex-wrap: wrap;">
+                            <button class="btn btn-primary" style="padding: 6px 12px; font-size: 0.8em;" onclick="abrirCotacao(${index})">📂 Abrir</button>
                             ${cot.linkCompanhia ? `<button class="btn btn-secondary" style="padding: 6px 12px; font-size: 0.8em;" onclick="window.open('${cot.linkCompanhia}', '_blank')">🔗 Ver Voo</button>` : ''}
                             <button class="btn btn-danger" style="padding: 6px 12px; font-size: 0.8em;" onclick="excluirCotacao(${index})">Excluir</button>
                         </div>
@@ -3419,6 +3511,65 @@ ${voltaTexto}${bagagem ? `🧳 *Bagagem (por pessoa)*\n${bagagem}\n────\
                 atualizarListaCotacoes();
                 alert('Cotação excluída!');
             }
+        }
+
+        function abrirCotacao(index) {
+            const cot = cotacoes[index];
+
+            // Mudar para a aba de cotações
+            showTab('cotacoes');
+
+            // Aguardar um pouco para garantir que a aba foi carregada
+            setTimeout(() => {
+                // Dados do Cliente
+                document.getElementById('cotacao_nomeCliente').value = cot.nomeCliente || '';
+
+                // Passageiros
+                document.getElementById('cotacao_adultos').value = cot.adultos || '1';
+                document.getElementById('cotacao_criancas').value = cot.criancas || '0';
+                document.getElementById('cotacao_bebes').value = cot.bebes || '0';
+                atualizarTotalPassageiros();
+
+                // Detalhes do Voo
+                document.getElementById('cotacao_origem').value = cot.origem || '';
+                document.getElementById('cotacao_destino').value = cot.destino || '';
+                document.getElementById('cotacao_companhia').value = cot.companhia || '';
+                document.getElementById('cotacao_tipoTarifa').value = cot.tipoTarifa || '';
+                document.getElementById('cotacao_linkCompanhia').value = cot.linkCompanhia || '';
+                document.getElementById('cotacao_tipoViagem').value = cot.tipoViagem || 'ida-volta';
+
+                // Voo de IDA
+                document.getElementById('cotacao_dataIda').value = cot.dataIda || '';
+                document.getElementById('cotacao_horaSaidaIda').value = cot.horaSaidaIda || '';
+                document.getElementById('cotacao_dataChegadaIda').value = cot.dataChegadaIda || '';
+                document.getElementById('cotacao_horaChegadaIda').value = cot.horaChegadaIda || '';
+                document.getElementById('cotacao_tempoVooIda').value = cot.tempoVooIda || '';
+                document.getElementById('cotacao_conexaoIda').value = cot.conexaoIda || 'nao';
+
+                // Voo de VOLTA
+                document.getElementById('cotacao_dataVolta').value = cot.dataVolta || '';
+                document.getElementById('cotacao_horaSaidaVolta').value = cot.horaSaidaVolta || '';
+                document.getElementById('cotacao_dataChegadaVolta').value = cot.dataChegadaVolta || '';
+                document.getElementById('cotacao_horaChegadaVolta').value = cot.horaChegadaVolta || '';
+                document.getElementById('cotacao_tempoVooVolta').value = cot.tempoVooVolta || '';
+                document.getElementById('cotacao_conexaoVolta').value = cot.conexaoVolta || 'nao';
+
+                // Valores
+                document.getElementById('cotacao_milhas').value = cot.milhas || '';
+                document.getElementById('cotacao_valorMilheiro').value = cot.valorMilheiro || '';
+                document.getElementById('cotacao_taxas').value = cot.taxas || '';
+                document.getElementById('cotacao_bagagem').value = cot.bagagem || '';
+
+                // Atualizar cálculos
+                if (typeof calcularCotacao === 'function') {
+                    calcularCotacao();
+                }
+
+                // Scroll para o topo do formulário
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+
+                alert('✅ Cotação carregada!\n\nVocê pode editar os dados e salvar novamente se precisar.');
+            }, 100);
         }
 
         function zerarSistema() {
@@ -3456,6 +3607,99 @@ ${voltaTexto}${bagagem ? `🧳 *Bagagem (por pessoa)*\n${bagagem}\n────\
 
             // Voltar para dashboard
             showTab('dashboard');
+        }
+
+        // ========================================
+        // FUNÇÕES Z-API - INTEGRAÇÃO WHATSAPP
+        // ========================================
+
+        function salvarConfigZAPI() {
+            const instanceId = document.getElementById('zapiInstanceId').value.trim();
+            const token = document.getElementById('zapiToken').value.trim();
+            const clientToken = document.getElementById('zapiClientToken').value.trim();
+            const destino = document.getElementById('zapiDestino').value.trim();
+
+            if (!instanceId || !token || !clientToken || !destino) {
+                alert('❌ Por favor, preencha todos os campos da configuração Z-API!');
+                return;
+            }
+
+            const config = {
+                instanceId: instanceId,
+                token: token,
+                clientToken: clientToken,
+                destino: destino
+            };
+
+            localStorage.setItem('zapiConfig', JSON.stringify(config));
+            alert('✅ Configuração Z-API salva com sucesso!\n\nAgora você pode enviar posts diretamente para o WhatsApp.');
+        }
+
+        async function enviarAlertaZAPI() {
+            // Verificar se o post foi gerado
+            if (!postConteudoGlobal || postConteudoGlobal.trim() === "") {
+                alert('❌ Por favor, gere o post primeiro clicando em "Gerar Post Completo VoeComKennedy"!');
+                return;
+            }
+
+            // Carregar configurações
+            const zapiConfigStr = localStorage.getItem('zapiConfig');
+            if (!zapiConfigStr) {
+                alert('❌ Configuração Z-API não encontrada!\n\nPor favor, configure suas credenciais na aba "Configurações".');
+                showTab('configuracoes');
+                return;
+            }
+
+            const config = JSON.parse(zapiConfigStr);
+
+            // Validar configurações
+            if (!config.instanceId || !config.token || !config.clientToken || !config.destino) {
+                alert('❌ Configuração Z-API incompleta!\n\nVerifique todos os campos na aba "Configurações".');
+                showTab('configuracoes');
+                return;
+            }
+
+            // Montar URL da API
+            const url = `https://api.z-api.io/instances/${config.instanceId}/token/${config.clientToken}/send-text`;
+
+            // Preparar corpo da requisição
+            const body = {
+                phone: config.destino,
+                message: postConteudoGlobal
+            };
+
+            try {
+                // Mostrar mensagem de envio
+                alert('📤 Enviando mensagem para o WhatsApp...\n\nAguarde alguns segundos.');
+
+                // Fazer requisição
+                const response = await fetch(url, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Client-Token': config.clientToken
+                    },
+                    body: JSON.stringify(body)
+                });
+
+                const result = await response.json();
+
+                if (response.ok) {
+                    alert('✅ Mensagem enviada com SUCESSO para o WhatsApp!\n\n' +
+                          'Verifique seu WhatsApp: ' + config.destino);
+                    console.log('✅ Resposta Z-API:', result);
+                } else {
+                    alert('❌ Erro ao enviar mensagem!\n\n' +
+                          'Resposta da API: ' + JSON.stringify(result, null, 2) +
+                          '\n\nVerifique suas credenciais na aba Configurações.');
+                    console.error('❌ Erro Z-API:', result);
+                }
+            } catch (error) {
+                alert('❌ Erro de conexão com a Z-API!\n\n' +
+                      'Detalhes: ' + error.message +
+                      '\n\nVerifique sua internet e tente novamente.');
+                console.error('❌ Erro ao enviar:', error);
+            }
         }
 
         carregarDados();
