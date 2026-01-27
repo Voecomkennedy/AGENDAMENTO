@@ -1887,14 +1887,22 @@
             const backup = {
                 agendamentos: agendamentos,
                 historico: historico,
-                data_backup: new Date().toLocaleString('pt-BR')
+                cotacoes: cotacoes,
+                data_backup: new Date().toLocaleString('pt-BR'),
+                versao: '2.0'
             };
             const blob = new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' });
             const link = document.createElement('a');
             link.href = URL.createObjectURL(blob);
             link.download = 'backup_completo_' + new Date().toISOString().split('T')[0] + '.json';
             link.click();
-            alert('Backup completo realizado com sucesso!');
+
+            alert(`✅ Backup completo realizado com sucesso!\n\n` +
+                  `📦 Conteúdo do backup:\n` +
+                  `• ${agendamentos.length} agendamentos\n` +
+                  `• ${historico.length} registros históricos\n` +
+                  `• ${cotacoes.length} cotações\n\n` +
+                  `Arquivo: backup_completo_${new Date().toISOString().split('T')[0]}.json`);
         }
 
         function exportarHistorico() {
@@ -1925,29 +1933,84 @@
                 try {
                     const dadosImportados = JSON.parse(e.target.result);
 
-                    if (!Array.isArray(dadosImportados)) {
+                    // Detectar se é um backup completo (objeto) ou apenas array de agendamentos
+                    let isBackupCompleto = false;
+                    let agendamentosImportados = [];
+                    let historicoImportado = [];
+                    let cotacoesImportadas = [];
+
+                    if (Array.isArray(dadosImportados)) {
+                        // Formato antigo: apenas array de agendamentos
+                        agendamentosImportados = dadosImportados;
+                    } else if (typeof dadosImportados === 'object' && dadosImportados !== null) {
+                        // Formato novo: backup completo com objeto
+                        if (dadosImportados.agendamentos || dadosImportados.historico || dadosImportados.cotacoes) {
+                            isBackupCompleto = true;
+                            agendamentosImportados = dadosImportados.agendamentos || [];
+                            historicoImportado = dadosImportados.historico || [];
+                            cotacoesImportadas = dadosImportados.cotacoes || [];
+                        } else {
+                            alert('Erro: O arquivo não contém um formato válido!');
+                            return;
+                        }
+                    } else {
                         alert('Erro: O arquivo não contém um formato válido!');
                         return;
                     }
 
-                    if (agendamentos.length > 0) {
-                        if (confirm(`Você já tem ${agendamentos.length} agendamentos. Deseja SUBSTITUIR todos pelos dados importados?`)) {
-                            agendamentos = dadosImportados;
-                        } else if (confirm('Deseja ADICIONAR os dados importados aos existentes?')) {
-                            agendamentos = agendamentos.concat(dadosImportados);
-                        } else {
-                            return;
-                        }
+                    // Confirmar importação
+                    let mensagemConfirmacao = '';
+                    if (isBackupCompleto) {
+                        mensagemConfirmacao = `📦 BACKUP COMPLETO DETECTADO:\n\n`;
+                        mensagemConfirmacao += `• ${agendamentosImportados.length} agendamentos\n`;
+                        mensagemConfirmacao += `• ${historicoImportado.length} registros no histórico\n`;
+                        mensagemConfirmacao += `• ${cotacoesImportadas.length} cotações\n\n`;
+                        mensagemConfirmacao += `Deseja RESTAURAR todos esses dados?\n\n`;
+                        mensagemConfirmacao += `⚠️ ATENÇÃO: Seus dados atuais serão SUBSTITUÍDOS!`;
                     } else {
-                        agendamentos = dadosImportados;
+                        mensagemConfirmacao = `Importar ${agendamentosImportados.length} agendamentos?`;
                     }
 
-                    salvarDados();
-                    atualizarTudo();
-                    alert(`Sucesso! ${dadosImportados.length} agendamentos importados!`);
+                    if (!confirm(mensagemConfirmacao)) {
+                        return;
+                    }
+
+                    // Importar dados
+                    if (isBackupCompleto) {
+                        // Restaurar backup completo
+                        agendamentos = agendamentosImportados;
+                        historico = historicoImportado;
+                        cotacoes = cotacoesImportadas;
+
+                        salvarDados();
+                        atualizarTudo();
+
+                        alert(`✅ BACKUP RESTAURADO COM SUCESSO!\n\n` +
+                              `• ${agendamentosImportados.length} agendamentos\n` +
+                              `• ${historicoImportado.length} registros históricos\n` +
+                              `• ${cotacoesImportadas.length} cotações\n\n` +
+                              `Seus dados foram completamente restaurados!`);
+                    } else {
+                        // Importar apenas agendamentos
+                        if (agendamentos.length > 0) {
+                            if (confirm(`Você já tem ${agendamentos.length} agendamentos. Deseja SUBSTITUIR todos pelos dados importados?`)) {
+                                agendamentos = agendamentosImportados;
+                            } else if (confirm('Deseja ADICIONAR os dados importados aos existentes?')) {
+                                agendamentos = agendamentos.concat(agendamentosImportados);
+                            } else {
+                                return;
+                            }
+                        } else {
+                            agendamentos = agendamentosImportados;
+                        }
+
+                        salvarDados();
+                        atualizarTudo();
+                        alert(`✅ Sucesso! ${agendamentosImportados.length} agendamentos importados!`);
+                    }
 
                 } catch (error) {
-                    alert('Erro ao importar arquivo: ' + error.message);
+                    alert('❌ Erro ao importar arquivo: ' + error.message);
                 }
             };
             reader.readAsText(file);
