@@ -886,7 +886,7 @@
                 <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
                     <div class="form-group">
                         <label>Data de Saída (IDA)</label>
-                        <input type="date" id="cotacao_dataIda" required>
+                        <input type="date" id="cotacao_dataIda" required onchange="ajustarDatasMinimas()">
                     </div>
                     <div class="form-group">
                         <label>Horário Saída</label>
@@ -894,7 +894,7 @@
                     </div>
                     <div class="form-group">
                         <label>Data de Chegada (IDA)</label>
-                        <input type="date" id="cotacao_dataChegadaIda">
+                        <input type="date" id="cotacao_dataChegadaIda" onchange="ajustarDatasMinimas()">
                         <small style="color: #888; display: block; margin-top: 3px;">Se chegar em dia diferente</small>
                     </div>
                     <div class="form-group">
@@ -972,7 +972,7 @@
                     <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
                         <div class="form-group">
                             <label>Data de Saída (VOLTA)</label>
-                            <input type="date" id="cotacao_dataVolta">
+                            <input type="date" id="cotacao_dataVolta" onchange="ajustarDatasMinimas()">
                     </div>
                     <div class="form-group">
                         <label>Horário Saída</label>
@@ -1055,18 +1055,50 @@
                 </div>
 
                 <h3>Cálculo de Valores (Interno - Cliente não vê milhas)</h3>
-                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 15px;">
-                    <div class="form-group">
-                        <label>Quantidade de Milhas</label>
-                        <input type="text" id="cotacao_milhas" placeholder="Ex: 15.000" oninput="calcularCotacao()">
+
+                <div class="form-group" style="max-width: 300px; margin-bottom: 20px;">
+                    <label style="font-weight: bold; color: #d4af37;">Tipo de Cotação</label>
+                    <select id="cotacao_tipo" onchange="alternarTipoCotacao()" style="font-weight: bold;">
+                        <option value="milhas">Por Milhas</option>
+                        <option value="valor-real">Por Valor Real (Consolidadora)</option>
+                    </select>
+                </div>
+
+                <div id="campos_milhas">
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 15px;">
+                        <div class="form-group">
+                            <label>Quantidade de Milhas</label>
+                            <input type="text" id="cotacao_milhas" placeholder="Ex: 15.000" oninput="calcularCotacao()">
+                        </div>
+                        <div class="form-group">
+                            <label>Valor do Milheiro (R$)</label>
+                            <input type="text" id="cotacao_valorMilheiro" placeholder="Ex: 31,00" oninput="calcularCotacao()">
+                        </div>
+                        <div class="form-group">
+                            <label>Taxas de Embarque (R$)</label>
+                            <input type="text" id="cotacao_taxas" placeholder="Ex: 250,00" oninput="calcularCotacao()">
+                        </div>
                     </div>
-                    <div class="form-group">
-                        <label>Valor do Milheiro (R$)</label>
-                        <input type="text" id="cotacao_valorMilheiro" placeholder="Ex: 31,00" oninput="calcularCotacao()">
+                </div>
+
+                <div id="campos_valor_real" style="display: none;">
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 15px;">
+                        <div class="form-group">
+                            <label>Valor Total à Vista (R$)</label>
+                            <input type="text" id="cotacao_valorVista" placeholder="Ex: 5.000,00" oninput="calcularCotacao()">
+                        </div>
+                        <div class="form-group">
+                            <label>Lucro (R$) - Opcional</label>
+                            <input type="text" id="cotacao_lucro" placeholder="Ex: 500,00">
+                        </div>
+                        <div class="form-group">
+                            <label>Taxas de Embarque (R$) - Opcional</label>
+                            <input type="text" id="cotacao_taxas_real" placeholder="Ex: 250,00" oninput="calcularCotacao()">
+                        </div>
                     </div>
-                    <div class="form-group">
-                        <label>Taxas de Embarque (R$)</label>
-                        <input type="text" id="cotacao_taxas" placeholder="Ex: 250,00" oninput="calcularCotacao()">
+                    <div class="form-group" style="margin-top: 15px;">
+                        <label>Observação (Empresa/Margem)</label>
+                        <textarea id="cotacao_obs_valor_real" rows="2" placeholder="Ex: Consolidadora XYZ - margem 10%"></textarea>
                     </div>
                 </div>
 
@@ -3076,17 +3108,62 @@ ${agendamento.link || ''}`;
             }
         }
 
+        function ajustarDatasMinimas() {
+            const dataIda = document.getElementById('cotacao_dataIda').value;
+            const dataChegadaIda = document.getElementById('cotacao_dataChegadaIda').value;
+            const dataVolta = document.getElementById('cotacao_dataVolta').value;
+
+            // Se data de IDA estiver preenchida
+            if (dataIda) {
+                // Data de Chegada IDA não pode ser antes da Data de Saída IDA
+                document.getElementById('cotacao_dataChegadaIda').min = dataIda;
+
+                // Data de VOLTA não pode ser antes da Data de IDA
+                document.getElementById('cotacao_dataVolta').min = dataIda;
+
+                // Se data de chegada IDA já estiver preenchida e for antes da saída, limpa
+                if (dataChegadaIda && dataChegadaIda < dataIda) {
+                    document.getElementById('cotacao_dataChegadaIda').value = '';
+                }
+            }
+
+            // Se data de VOLTA estiver preenchida
+            if (dataVolta) {
+                // Data de Chegada VOLTA não pode ser antes da Data de Saída VOLTA
+                document.getElementById('cotacao_dataChegadaVolta').min = dataVolta;
+
+                // Se data de volta for antes da data de ida, limpa
+                if (dataIda && dataVolta < dataIda) {
+                    document.getElementById('cotacao_dataVolta').value = '';
+                    alert('A data de volta não pode ser antes da data de ida!');
+                }
+            }
+        }
+
+        function alternarTipoCotacao() {
+            const tipo = document.getElementById('cotacao_tipo').value;
+            const camposMilhas = document.getElementById('campos_milhas');
+            const camposValorReal = document.getElementById('campos_valor_real');
+
+            if (tipo === 'milhas') {
+                camposMilhas.style.display = 'block';
+                camposValorReal.style.display = 'none';
+            } else {
+                camposMilhas.style.display = 'none';
+                camposValorReal.style.display = 'block';
+            }
+
+            calcularCotacao();
+        }
+
         function calcularCotacao() {
-            const milhasInput = document.getElementById('cotacao_milhas').value;
-            const valorMilheiroInput = document.getElementById('cotacao_valorMilheiro').value;
-            const taxasInput = document.getElementById('cotacao_taxas').value;
+            const tipo = document.getElementById('cotacao_tipo').value;
             const adultos = parseInt(document.getElementById('cotacao_adultos').value) || 0;
             const criancas = parseInt(document.getElementById('cotacao_criancas').value) || 0;
             const bebes = parseInt(document.getElementById('cotacao_bebes').value) || 0;
             const numPassageiros = adultos + criancas + bebes;
-            const companhia = document.getElementById('cotacao_companhia').value;
 
-            if (!milhasInput || !valorMilheiroInput) {
+            if (numPassageiros === 0) {
                 document.getElementById('cotacao_valorPessoa').textContent = '-';
                 document.getElementById('cotacao_valorTotal').textContent = '-';
                 document.getElementById('cotacao_parcela').textContent = '-';
@@ -3094,25 +3171,61 @@ ${agendamento.link || ''}`;
                 return;
             }
 
-            const milhasNum = parseFloat(milhasInput.replace(/[^\d]/g, ''));
-            const valorMilheiroNum = parseFloat(valorMilheiroInput.replace(/[^\d,]/g, '').replace(',', '.'));
-            const taxasNum = taxasInput ? parseFloat(taxasInput.replace(/[^\d,]/g, '').replace(',', '.')) : 0;
-
-            const custoMilhas = (milhasNum / 1000) * valorMilheiroNum;
-
-            // Verificar se é valor por pessoa ou total
-            const valorPorPessoaMultiplica = (companhia === 'LATAM');
-
             let custoPorPessoa, custoTotalPix;
 
-            if (valorPorPessoaMultiplica) {
-                // LATAM: valor é POR PESSOA
-                custoPorPessoa = custoMilhas + (isNaN(taxasNum) ? 0 : taxasNum);
-                custoTotalPix = custoPorPessoa * numPassageiros;
-            } else {
-                // GOL (Smiles) e Azul: valor JÁ É O TOTAL
-                custoTotalPix = custoMilhas + (isNaN(taxasNum) ? 0 : taxasNum);
+            if (tipo === 'valor-real') {
+                // Modo por Valor Real (Consolidadora)
+                const valorVistaInput = document.getElementById('cotacao_valorVista').value;
+                const taxasRealInput = document.getElementById('cotacao_taxas_real').value;
+
+                if (!valorVistaInput) {
+                    document.getElementById('cotacao_valorPessoa').textContent = '-';
+                    document.getElementById('cotacao_valorTotal').textContent = '-';
+                    document.getElementById('cotacao_parcela').textContent = '-';
+                    document.getElementById('cotacao_totalParcelado').textContent = '-';
+                    return;
+                }
+
+                const valorVistaNum = parseFloat(valorVistaInput.replace(/[^\d,]/g, '').replace(',', '.'));
+                const taxasRealNum = taxasRealInput ? parseFloat(taxasRealInput.replace(/[^\d,]/g, '').replace(',', '.')) : 0;
+
+                // Valor à vista já é o total, só adiciona taxas se houver
+                custoTotalPix = valorVistaNum + taxasRealNum;
                 custoPorPessoa = custoTotalPix / numPassageiros;
+
+            } else {
+                // Modo por Milhas (original)
+                const milhasInput = document.getElementById('cotacao_milhas').value;
+                const valorMilheiroInput = document.getElementById('cotacao_valorMilheiro').value;
+                const taxasInput = document.getElementById('cotacao_taxas').value;
+                const companhia = document.getElementById('cotacao_companhia').value;
+
+                if (!milhasInput || !valorMilheiroInput) {
+                    document.getElementById('cotacao_valorPessoa').textContent = '-';
+                    document.getElementById('cotacao_valorTotal').textContent = '-';
+                    document.getElementById('cotacao_parcela').textContent = '-';
+                    document.getElementById('cotacao_totalParcelado').textContent = '-';
+                    return;
+                }
+
+                const milhasNum = parseFloat(milhasInput.replace(/[^\d]/g, ''));
+                const valorMilheiroNum = parseFloat(valorMilheiroInput.replace(/[^\d,]/g, '').replace(',', '.'));
+                const taxasNum = taxasInput ? parseFloat(taxasInput.replace(/[^\d,]/g, '').replace(',', '.')) : 0;
+
+                const custoMilhas = (milhasNum / 1000) * valorMilheiroNum;
+
+                // Verificar se é valor por pessoa ou total
+                const valorPorPessoaMultiplica = (companhia === 'LATAM');
+
+                if (valorPorPessoaMultiplica) {
+                    // LATAM: valor é POR PESSOA
+                    custoPorPessoa = custoMilhas + (isNaN(taxasNum) ? 0 : taxasNum);
+                    custoTotalPix = custoPorPessoa * numPassageiros;
+                } else {
+                    // GOL (Smiles) e Azul: valor JÁ É O TOTAL
+                    custoTotalPix = custoMilhas + (isNaN(taxasNum) ? 0 : taxasNum);
+                    custoPorPessoa = custoTotalPix / numPassageiros;
+                }
             }
 
             const custoTotalCartao = custoTotalPix * 1.088;
