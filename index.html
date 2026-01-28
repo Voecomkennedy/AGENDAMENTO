@@ -14,47 +14,47 @@
         
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: #0a1929;
+            background: #f5f7fa;
             min-height: 100vh;
             padding: 20px;
-            color: #e0e0e0;
+            color: #2c3e50;
         }
-        
+
         .container {
             max-width: 1600px;
             margin: 0 auto;
-            background: #1a2332;
+            background: #ffffff;
             border-radius: 12px;
-            box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
             overflow: hidden;
-            border: 1px solid #2a3544;
+            border: 1px solid #e0e0e0;
         }
-        
+
         .header {
-            background: linear-gradient(135deg, #0a1929 0%, #1a2332 100%);
+            background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
             color: #d4af37;
             padding: 30px;
             border-bottom: 2px solid #d4af37;
         }
-        
+
         .header h1 {
             font-size: 2em;
             margin-bottom: 5px;
             font-weight: 600;
             letter-spacing: 1px;
         }
-        
+
         .header p {
-            color: #b0b0b0;
+            color: #ecf0f1;
             font-size: 0.95em;
         }
-        
+
         .tabs {
             display: flex;
-            background: #0f1620;
-            border-bottom: 1px solid #2a3544;
+            background: #fafafa;
+            border-bottom: 1px solid #e0e0e0;
         }
-        
+
         .tab {
             flex: 1;
             padding: 18px;
@@ -65,17 +65,17 @@
             border: none;
             background: none;
             font-size: 0.95em;
-            color: #b0b0b0;
+            color: #7f8c8d;
             border-bottom: 3px solid transparent;
         }
-        
+
         .tab:hover {
-            background: #1a2332;
+            background: #f0f0f0;
             color: #d4af37;
         }
-        
+
         .tab.active {
-            background: #1a2332;
+            background: #ffffff;
             color: #d4af37;
             border-bottom: 3px solid #d4af37;
         }
@@ -116,26 +116,28 @@
         }
         
         .stat-card {
-            background: #0f1620;
+            background: #ffffff;
             padding: 25px;
             border-radius: 8px;
-            border: 1px solid #2a3544;
+            border: 1px solid #e0e0e0;
             transition: all 0.3s;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.08);
         }
-        
+
         .stat-card:hover {
             border-color: #d4af37;
             transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.12);
         }
-        
+
         .stat-card h3 {
             font-size: 0.85em;
-            color: #b0b0b0;
+            color: #7f8c8d;
             margin: 0 0 10px 0;
             text-transform: uppercase;
             letter-spacing: 0.5px;
         }
-        
+
         .stat-card .value {
             font-size: 2.5em;
             font-weight: bold;
@@ -157,20 +159,20 @@
         .form-group label {
             margin-bottom: 8px;
             font-weight: 500;
-            color: #d4af37;
+            color: #2c3e50;
             font-size: 0.9em;
         }
-        
+
         .form-group input,
         .form-group select,
         .form-group textarea {
             padding: 12px;
-            border: 1px solid #2a3544;
+            border: 1px solid #ddd;
             border-radius: 6px;
             font-size: 0.95em;
-            background: #0f1620;
-            color: #e0e0e0;
-            transition: border 0.3s;
+            background: #ffffff;
+            color: #2c3e50;
+            transition: border 0.3s, box-shadow 0.3s;
             font-family: inherit;
         }
 
@@ -185,6 +187,7 @@
         .form-group textarea:focus {
             outline: none;
             border-color: #d4af37;
+            box-shadow: 0 0 0 3px rgba(212, 175, 55, 0.1);
         }
         
         .btn {
@@ -208,12 +211,13 @@
         }
         
         .btn-secondary {
-            background: #2a3544;
-            color: #e0e0e0;
+            background: #7f8c8d;
+            color: #ffffff;
         }
-        
+
         .btn-secondary:hover {
-            background: #3a4554;
+            background: #95a5a6;
+            transform: translateY(-2px);
         }
         
         .btn-danger {
@@ -230,97 +234,97 @@
         }
         
         .region-title {
-            background: #0f1620;
+            background: #fafafa;
             color: #d4af37;
             padding: 15px;
             border-radius: 6px;
             margin-bottom: 15px;
             font-size: 1.1em;
             font-weight: 600;
-            border: 1px solid #2a3544;
+            border: 1px solid #e0e0e0;
         }
-        
+
         .time-grid {
             display: grid;
             grid-template-columns: 90px repeat(7, 1fr);
             gap: 4px;
             font-size: 0.85em;
         }
-        
+
         .time-header, .day-header, .time-cell {
             padding: 10px 5px;
             text-align: center;
             border-radius: 4px;
         }
-        
+
         .day-header {
-            background: #0f1620;
+            background: #ffffff;
             color: #d4af37;
             font-weight: 600;
-            border: 1px solid #2a3544;
+            border: 1px solid #e0e0e0;
         }
-        
+
         .time-header {
-            background: #0f1620;
+            background: #fafafa;
             font-weight: 500;
-            color: #b0b0b0;
-            border: 1px solid #2a3544;
+            color: #7f8c8d;
+            border: 1px solid #e0e0e0;
         }
-        
+
         .time-cell {
             cursor: pointer;
             transition: all 0.2s;
             font-weight: 600;
-            border: 1px solid #2a3544;
+            border: 1px solid #e0e0e0;
         }
-        
+
         .time-cell.livre {
-            background: #1b4332;
-            color: #95d5b2;
+            background: #d4edda;
+            color: #155724;
         }
-        
+
         .time-cell.livre:hover {
-            background: #2d6a4f;
-            border-color: #95d5b2;
+            background: #c3e6cb;
+            border-color: #28a745;
         }
-        
+
         .time-cell.ocupado {
-            background: #3d1f1f;
-            color: #e5989b;
+            background: #f8d7da;
+            color: #721c24;
         }
-        
+
         .time-cell.ocupado:hover {
-            background: #4d2f2f;
+            background: #f5c6cb;
         }
-        
+
         .agendamentos-table {
             width: 100%;
             border-collapse: collapse;
             margin-top: 20px;
         }
-        
+
         .agendamentos-table th,
         .agendamentos-table td {
             padding: 14px;
             text-align: left;
-            border-bottom: 1px solid #2a3544;
+            border-bottom: 1px solid #e0e0e0;
         }
-        
+
         .agendamentos-table th {
-            background: #0f1620;
-            color: #d4af37;
+            background: #fafafa;
+            color: #2c3e50;
             font-weight: 600;
             text-transform: uppercase;
             font-size: 0.85em;
             letter-spacing: 0.5px;
         }
-        
+
         .agendamentos-table tr {
-            background: #1a2332;
+            background: #ffffff;
         }
-        
+
         .agendamentos-table tr:hover {
-            background: #0f1620;
+            background: #f8f9fa;
         }
         
         .badge {
@@ -332,34 +336,35 @@
         }
         
         .badge-diario {
-            background: #1e3a5f;
-            color: #64b5f6;
+            background: #e3f2fd;
+            color: #1976d2;
         }
-        
+
         .badge-alternado {
-            background: #4a3c1f;
-            color: #d4af37;
+            background: #fff3e0;
+            color: #e65100;
         }
-        
+
         .badge-uma-vez {
-            background: #1b4332;
-            color: #95d5b2;
+            background: #e8f5e9;
+            color: #2e7d32;
         }
-        
+
         .search-box {
             padding: 12px;
-            border: 1px solid #2a3544;
+            border: 1px solid #ddd;
             border-radius: 6px;
             font-size: 0.95em;
             width: 100%;
             margin-bottom: 20px;
-            background: #0f1620;
-            color: #e0e0e0;
+            background: #ffffff;
+            color: #2c3e50;
         }
-        
+
         .search-box:focus {
             outline: none;
             border-color: #d4af37;
+            box-shadow: 0 0 0 3px rgba(212, 175, 55, 0.1);
         }
         
         .filter-group {
@@ -371,86 +376,87 @@
         
         .filter-btn {
             padding: 10px 20px;
-            border: 1px solid #2a3544;
-            background: #0f1620;
-            color: #b0b0b0;
+            border: 1px solid #ddd;
+            background: #ffffff;
+            color: #7f8c8d;
             border-radius: 6px;
             cursor: pointer;
             transition: all 0.3s;
             font-size: 0.9em;
         }
-        
+
         .filter-btn:hover {
             border-color: #d4af37;
             color: #d4af37;
         }
-        
+
         .filter-btn.active {
             background: #d4af37;
-            color: #0a1929;
+            color: #ffffff;
             border-color: #d4af37;
         }
-        
+
         .empty-state {
             text-align: center;
             padding: 60px 20px;
             color: #6c757d;
         }
-        
+
         .distribuicao-box {
-            background: #0f1620;
+            background: #ffffff;
             padding: 15px;
             border-radius: 6px;
             display: flex;
             justify-content: space-between;
             align-items: center;
             margin-bottom: 10px;
-            border: 1px solid #2a3544;
+            border: 1px solid #e0e0e0;
         }
-        
+
         .distribuicao-box:hover {
             border-color: #d4af37;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
         }
-        
+
         .distribuicao-box span:first-child {
             font-weight: 500;
-            color: #e0e0e0;
+            color: #2c3e50;
         }
-        
+
         .distribuicao-box span:nth-child(2) {
             font-size: 1.5em;
             color: #d4af37;
             font-weight: 600;
         }
-        
+
         .distribuicao-box span:last-child {
-            color: #b0b0b0;
+            color: #7f8c8d;
         }
-        
+
         .info-text {
-            color: #b0b0b0;
+            color: #7f8c8d;
             font-size: 0.9em;
             margin-bottom: 20px;
             padding: 12px;
-            background: #0f1620;
+            background: #f8f9fa;
             border-radius: 6px;
             border-left: 3px solid #d4af37;
         }
-        
+
         .config-section {
             margin-top: 30px;
             padding: 25px;
-            background: #0f1620;
+            background: #fafafa;
             border-radius: 8px;
-            border: 1px solid #2a3544;
+            border: 1px solid #e0e0e0;
         }
-        
+
         .config-section h3 {
             margin-top: 0;
         }
-        
+
         .config-section p {
-            color: #b0b0b0;
+            color: #7f8c8d;
             line-height: 1.6;
         }
     </style>
@@ -652,13 +658,13 @@
                 <div class="form-group" style="margin-top: 15px;">
                     <label>Link Gerado para Emissão (Cópia Automática)</label>
                     <div style="display: flex; gap: 10px;">
-                        <input type="text" id="linkGerado" readonly placeholder="O link aparecerá aqui..." style="background: #15202b; color: #90caf9; border-color: #1e3a5f; flex: 1;">
+                        <input type="text" id="linkGerado" readonly placeholder="O link aparecerá aqui..." style="background: #f5f5f5; color: #2196F3; border-color: #ddd; flex: 1;">
                         <button type="button" class="btn btn-secondary" onclick="window.open(document.getElementById('linkGerado').value, '_blank')" style="white-space: nowrap;">Testar Link</button>
                     </div>
                 </div>
 
                 <div style="display: flex; gap: 10px; flex-wrap: wrap;">
-                    <button type="button" class="btn" onclick="gerarPostCompleto()" style="background: linear-gradient(135deg, #d4af37 0%, #f4d03f 100%); color: #0a1929; font-weight: bold; flex: 1; min-width: 250px;">Gerar Post Completo VoeComKennedy</button>
+                    <button type="button" class="btn" onclick="gerarPostCompleto()" style="background: linear-gradient(135deg, #d4af37 0%, #f4d03f 100%); color: #ffffff; font-weight: bold; flex: 1; min-width: 250px;">Gerar Post Completo VoeComKennedy</button>
 
                     <button type="button" class="btn" onclick="enviarAlertaZAPI()" style="background: #25D366; color: white; font-weight: bold; flex: 1; min-width: 250px; display: flex; align-items: center; justify-content: center; gap: 10px; margin-top: 10px;">
                         <span>Enviar para WhatsApp (Z-API)</span>
@@ -825,7 +831,7 @@
                     </div>
                     <div class="form-group">
                         <label>Total de Passageiros</label>
-                        <input type="text" id="cotacao_numPassageiros" value="1 adulto" readonly style="background: #1a2942; color: #d4af37; font-weight: bold;">
+                        <input type="text" id="cotacao_numPassageiros" value="1 adulto" readonly style="background: #fff8e1; color: #d4af37; font-weight: bold; border: 1px solid #d4af37;">
                     </div>
                 </div>
 
@@ -882,8 +888,9 @@
                     </select>
                 </div>
 
-                <h3>Voo de IDA</h3>
-                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
+                <div style="background: #e3f2fd; padding: 20px; border-radius: 8px; margin-bottom: 20px; border-left: 4px solid #2196F3;">
+                    <h3 style="color: #1976d2; margin-top: 0;">Voo de IDA</h3>
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
                     <div class="form-group">
                         <label>Data de Saída (IDA)</label>
                         <input type="date" id="cotacao_dataIda" required onchange="ajustarDatasMinimas()">
@@ -903,7 +910,7 @@
                     </div>
                     <div class="form-group">
                         <label>Tempo Total de Voo</label>
-                        <input type="text" id="cotacao_tempoVooIda" placeholder="Ex: 8h 30min" style="background: #1a2942; color: #d4af37; font-weight: bold;">
+                        <input type="text" id="cotacao_tempoVooIda" placeholder="Ex: 8h 30min" style="background: #fff8e1; color: #d4af37; font-weight: bold; border: 1px solid #d4af37;">
                     </div>
                     <div class="form-group">
                         <label>Tem Conexão?</label>
@@ -967,8 +974,8 @@
                     </div>
                 </div>
 
-                <div id="secaoVolta">
-                    <h3>Voo de VOLTA</h3>
+                <div id="secaoVolta" style="background: #e8f5e9; padding: 20px; border-radius: 8px; margin-bottom: 20px; border-left: 4px solid #4CAF50;">
+                    <h3 style="color: #2e7d32; margin-top: 0;">Voo de VOLTA</h3>
                     <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
                         <div class="form-group">
                             <label>Data de Saída (VOLTA)</label>
@@ -989,7 +996,7 @@
                     </div>
                     <div class="form-group">
                         <label>Tempo Total de Voo</label>
-                        <input type="text" id="cotacao_tempoVooVolta" placeholder="Ex: 8h 30min" style="background: #1a2942; color: #d4af37; font-weight: bold;">
+                        <input type="text" id="cotacao_tempoVooVolta" placeholder="Ex: 8h 30min" style="background: #fff8e1; color: #d4af37; font-weight: bold; border: 1px solid #d4af37;">
                     </div>
                     <div class="form-group">
                         <label>Tem Conexão?</label>
@@ -1166,7 +1173,7 @@
                 <button class="btn btn-danger" onclick="zerarSistema()">ZERAR SISTEMA COMPLETO</button>
             </div>
 
-            <div class="config-section" style="margin-top: 30px; margin-bottom: 30px; border: 2px solid #25D366; background: #0d1b2a; padding: 20px; border-radius: 8px;">
+            <div class="config-section" style="margin-top: 30px; margin-bottom: 30px; border: 2px solid #25D366; background: #e8f5e9; padding: 20px; border-radius: 8px;">
                 <h3 style="color: #25D366; margin-bottom: 20px; display: flex; align-items: center; gap: 10px;">
                     <svg width="24" height="24" viewBox="0 0 24 24" fill="#25D366">
                         <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/>
@@ -1176,49 +1183,49 @@
 
                 <div style="display: grid; gap: 15px;">
                     <div>
-                        <label style="display: block; margin-bottom: 5px; color: #90caf9;">Instance ID:</label>
+                        <label style="display: block; margin-bottom: 5px; color: #2c3e50; font-weight: 500;">Instance ID:</label>
                         <input type="text" id="zapiInstanceId" placeholder="Ex: 3EDD0D599BB271AB83F53EBEF7B316F4"
-                               style="width: 100%; padding: 10px; background: #15202b; color: #fff; border: 1px solid #1e3a5f; border-radius: 5px;">
+                               style="width: 100%; padding: 10px; background: #ffffff; color: #2c3e50; border: 1px solid #ddd; border-radius: 5px;">
                     </div>
 
                     <div>
-                        <label style="display: block; margin-bottom: 5px; color: #90caf9;">Token:</label>
+                        <label style="display: block; margin-bottom: 5px; color: #2c3e50; font-weight: 500;">Token:</label>
                         <input type="text" id="zapiToken" placeholder="Ex: 06F7A41C4F805CF4E4E22013"
-                               style="width: 100%; padding: 10px; background: #15202b; color: #fff; border: 1px solid #1e3a5f; border-radius: 5px;">
+                               style="width: 100%; padding: 10px; background: #ffffff; color: #2c3e50; border: 1px solid #ddd; border-radius: 5px;">
                     </div>
 
                     <div>
-                        <label style="display: block; margin-bottom: 5px; color: #90caf9;">Client Token (Chave Secreta):</label>
+                        <label style="display: block; margin-bottom: 5px; color: #2c3e50; font-weight: 500;">Client Token (Chave Secreta):</label>
                         <input type="password" id="zapiClientToken" placeholder="Ex: F171001aa061240959a73085f6204d309S"
-                               style="width: 100%; padding: 10px; background: #15202b; color: #fff; border: 1px solid #1e3a5f; border-radius: 5px;">
+                               style="width: 100%; padding: 10px; background: #ffffff; color: #2c3e50; border: 1px solid #ddd; border-radius: 5px;">
                     </div>
 
                     <div>
-                        <label style="display: block; margin-bottom: 5px; color: #90caf9;">Número de Destino (com DDI):</label>
+                        <label style="display: block; margin-bottom: 5px; color: #2c3e50; font-weight: 500;">Número de Destino (com DDI):</label>
                         <input type="tel" id="zapiDestino" placeholder="Ex: 5562996448671"
-                               style="width: 100%; padding: 10px; background: #15202b; color: #fff; border: 1px solid #1e3a5f; border-radius: 5px;">
+                               style="width: 100%; padding: 10px; background: #ffffff; color: #2c3e50; border: 1px solid #ddd; border-radius: 5px;">
                     </div>
 
                     <button class="btn" onclick="salvarConfigZAPI()"
                             style="background: #25D366; color: white; font-weight: bold; padding: 12px; margin-top: 10px;">
-                        💾 Salvar Configuração Z-API
+                        Salvar Configuração Z-API
                     </button>
                 </div>
 
-                <div style="background: #1a2942; border-left: 4px solid #25D366; padding: 12px; margin-top: 15px; border-radius: 5px;">
-                    <strong style="color: #25D366;">📌 Onde encontrar suas credenciais:</strong>
-                    <p style="margin-top: 8px; color: #ccc; font-size: 14px;">
-                        1. Acesse: <a href="https://api.z-api.io" target="_blank" style="color: #90caf9;">https://api.z-api.io</a><br>
+                <div style="background: #f8f9fa; border-left: 4px solid #25D366; padding: 12px; margin-top: 15px; border-radius: 5px;">
+                    <strong style="color: #25D366;">Onde encontrar suas credenciais:</strong>
+                    <p style="margin-top: 8px; color: #2c3e50; font-size: 14px; line-height: 1.6;">
+                        1. Acesse: <a href="https://api.z-api.io" target="_blank" style="color: #2196F3; text-decoration: underline;">https://api.z-api.io</a><br>
                         2. Instance ID e Token: Na página da sua instância<br>
                         3. Client Token: Em "Configurações" → "Segurança"
                     </p>
                 </div>
             </div>
 
-            <div style="background: #1a2942; border-left: 4px solid #d32f2f; padding: 15px; margin-top: 20px; border-radius: 5px;">
+            <div style="background: #f8f9fa; border-left: 4px solid #d32f2f; padding: 15px; margin-top: 20px; border-radius: 5px;">
                 <strong style="color: #d32f2f;">ATENÇÃO: Zerar Sistema</strong>
-                <p style="margin-top: 10px; color: #ccc;">O botão vermelho acima irá apagar TODOS os dados:</p>
-                <ul style="margin-top: 10px; color: #ccc; margin-left: 20px;">
+                <p style="margin-top: 10px; color: #7f8c8d;">O botão vermelho acima irá apagar TODOS os dados:</p>
+                <ul style="margin-top: 10px; color: #7f8c8d; margin-left: 20px;">
                     <li>Agendamentos</li>
                     <li>Histórico</li>
                     <li>Cotações</li>
@@ -3782,8 +3789,8 @@ ${textoBagagem}
                     <td style="padding: 8px; font-weight: bold; color: #d4af37; vertical-align: middle;">${cot.valorTotal}</td>
                     <td style="padding: 8px; vertical-align: middle;">
                         <div style="display: flex; gap: 5px; flex-wrap: wrap; align-items: center;">
-                            <button class="btn" style="padding: 6px 12px; font-size: 0.8em; background: #4CAF50; color: white; white-space: nowrap;" onclick="visualizarCotacao(${index})">👁️ Visualizar</button>
-                            <button class="btn btn-primary" style="padding: 6px 12px; font-size: 0.8em; white-space: nowrap;" onclick="abrirCotacao(${index})">✏️ Editar</button>
+                            <button class="btn" style="padding: 6px 12px; font-size: 0.8em; background: #4CAF50; color: white; white-space: nowrap;" onclick="visualizarCotacao(${index})">Visualizar</button>
+                            <button class="btn btn-primary" style="padding: 6px 12px; font-size: 0.8em; white-space: nowrap;" onclick="abrirCotacao(${index})">Editar</button>
                             ${cot.linkCompanhia ? `<button class="btn btn-secondary" style="padding: 6px 12px; font-size: 0.8em; white-space: nowrap;" onclick="window.open('${cot.linkCompanhia}', '_blank')">🔗 Ver Voo</button>` : ''}
                             <button class="btn btn-danger" style="padding: 6px 12px; font-size: 0.8em; white-space: nowrap;" onclick="excluirCotacao(${index})">Excluir</button>
                         </div>
