@@ -3161,14 +3161,11 @@ ${agendamento.link || ''}`;
             const adultos = parseInt(document.getElementById('cotacao_adultos').value) || 0;
             const criancas = parseInt(document.getElementById('cotacao_criancas').value) || 0;
             const bebes = parseInt(document.getElementById('cotacao_bebes').value) || 0;
-            const numPassageiros = adultos + criancas + bebes;
+            let numPassageiros = adultos + criancas + bebes;
 
+            // Se não informou passageiros, assume 1 para fazer o cálculo
             if (numPassageiros === 0) {
-                document.getElementById('cotacao_valorPessoa').textContent = '-';
-                document.getElementById('cotacao_valorTotal').textContent = '-';
-                document.getElementById('cotacao_parcela').textContent = '-';
-                document.getElementById('cotacao_totalParcelado').textContent = '-';
-                return;
+                numPassageiros = 1;
             }
 
             let custoPorPessoa, custoTotalPix;
