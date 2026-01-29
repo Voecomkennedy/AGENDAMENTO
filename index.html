@@ -2290,8 +2290,8 @@
                 document.getElementById('custoTotal').textContent =
                     `R$ ${total.toFixed(2).replace('.', ',')} (${detalhes.join(' + ')})`;
 
-                // Calcular preço no cartão: 5x com juros de 8,8%
-                const precoCartao = total * 1.088;
+                // Calcular preço no cartão: 5x com juros de 9,65%
+                const precoCartao = total * 1.0965;
                 const parcelaMensal = precoCartao / 5;
                 document.getElementById('precoCartao').textContent =
                     `R$ ${precoCartao.toFixed(2).replace('.', ',')} (5x de R$ ${parcelaMensal.toFixed(2).replace('.', ',')})`;
@@ -2531,8 +2531,8 @@
             const custoMilhas = (milhasNum / 1000) * valorMilheiroNum;
             const custoTotalPix = custoMilhas + (isNaN(taxasNum) ? 0 : taxasNum);
 
-            // Cartão (5x com juros de 8.8%)
-            const custoTotalCartao = custoTotalPix * 1.088;
+            // Cartão (5x com juros de 9.65%)
+            const custoTotalCartao = custoTotalPix * 1.0965;
             const parcelaCartao = custoTotalCartao / 5;
 
             // --- FORMATAÇÃO BRASILEIRA (CORRIGIDA) ---
@@ -3229,7 +3229,7 @@ ${agendamento.link || ''}`;
                 }
             }
 
-            const custoTotalCartao = custoTotalPix * 1.088;
+            const custoTotalCartao = custoTotalPix * 1.0965;
             const parcelaCartao = custoTotalCartao / 5;
 
             document.getElementById('cotacao_valorPessoa').textContent = `R$ ${custoPorPessoa.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
