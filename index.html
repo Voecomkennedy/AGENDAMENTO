@@ -2441,23 +2441,16 @@
         }
 
         function formatarDatasParaPost(datasTexto) {
-            // Formato EXATO do modelo: manter por mês com separadores
+            // Formato EXATO do modelo: manter por mês SEM separadores
             // Entrada: "Fev: 21, 22, 24, 25, 26\nMar: 14, 18, 26, 31"
-            // Saída: "Fev: 21, 22, 24, 25, 26\n----------------\nMar: 14, 18, 26, 31\n----------------"
+            // Saída: "Fev: 21, 22, 24, 25, 26\nMar: 14, 18, 26, 31"
 
             if (!datasTexto || datasTexto.trim() === '') {
                 return '';
             }
 
             const linhas = datasTexto.split('\n').filter(l => l.trim() !== '');
-            const linhasFormatadas = [];
-
-            linhas.forEach(linha => {
-                linhasFormatadas.push(linha.trim());
-                linhasFormatadas.push('----------------');
-            });
-
-            return linhasFormatadas.join('\n');
+            return linhas.map(l => l.trim()).join('\n');
         }
 
         function converterDatasParaParametros(texto) {
@@ -2554,7 +2547,7 @@
                 const precoMedioNum = parseFloat(precoMedioInput.replace(/[^\d,]/g, '').replace(',', '.'));
                 const precoMedioFmt = precoMedioNum.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 
-                infoPrecoTexto += `\n❌ Preço médio: ${precoMedioFmt}`;
+                infoPrecoTexto += `❌ Preço médio: ${precoMedioFmt}`;
 
                 const economia = precoMedioNum - custoTotalPix;
                 if (economia > 0) {
@@ -2568,8 +2561,8 @@
             const datasVolta = document.getElementById('datasVolta').value;
             let datasTexto = '';
 
-            if (datasIda) datasTexto += `\n📅 *IDA:*\n\n${typeof formatarDatasParaPost === 'function' ? formatarDatasParaPost(datasIda) : datasIda}\n`;
-            if (datasVolta) datasTexto += `\n📅 *VOLTA:*\n${typeof formatarDatasParaPost === 'function' ? formatarDatasParaPost(datasVolta) : datasVolta}`;
+            if (datasIda) datasTexto += `📅 *IDA:*\n${typeof formatarDatasParaPost === 'function' ? formatarDatasParaPost(datasIda) : datasIda}`;
+            if (datasVolta) datasTexto += `\n────\n📅 *VOLTA:*\n${typeof formatarDatasParaPost === 'function' ? formatarDatasParaPost(datasVolta) : datasVolta}`;
 
             // --- GERAÇÃO DO LINK ---
             const resultadoLink = gerarLinkLandingPage();
@@ -2584,26 +2577,30 @@
 
             // Montagem do Post
             const itinerarioFmt = itinerario.toUpperCase().replace(/-/g, ' ⇄ ');
-            const post = `✈️ ${itinerarioFmt}
-
+            const post = `────
+✈️ ${itinerarioFmt}
+────
 🏢 Companhia: ${companhia || 'N/A'}
-
+────
 💰 *${valorPixFormatado}* (IDA E VOLTA via Pix)
 💳 5x de ${parcelaFormatada} (no cartão, com acréscimo)
-${infoPrecoTexto}${datasTexto}
-
+────${infoPrecoTexto}
+────
+${datasTexto}
+────
 ✅ Taxas de embarque já inclusas.
+────
 ⚠️ Tarifas dinâmicas, sujeitas a alteração.
-
-👇 DESEJA EMITIR?
+────
+👇 *DESEJA EMITIR?*
 ${linkEmissao}
-
-#VoeComKennedy #AlertaExclusivo
----
-🌍 QUER OUTRA DATA OU DESTINO?
-Não achou o que procurava? A gente cota qualquer viagem para você aqui:
-👉 https://voecomkennedy.github.io/COTACAO/
----`;
+────
+🌍 *QUER OUTRA DATA OU DESTINO?*
+_Não achou o que procurava? A gente cota qualquer viagem para você aqui:_
+👉 https://tinyurl.com/4mey5v6a
+────
+#VoeComKennedy #AlertaExclusivos
+────`;
 
             // Salvar na variável global
             postConteudoGlobal = post;
